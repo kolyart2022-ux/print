@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF Editor — страницы</title>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs" type="module"></script>
+  <style>
+    :root{
+      --bg:#f5f6f8; --card:#fff; --text:#17181b; --muted:#737780;
+      --line:#e5e7eb; --accent:#111827; --danger:#e5484d;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .app{min-height:100vh;display:flex;flex-direction:column}
+    header{height:70px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;gap:18px;position:sticky;top:0;z-index:10}
+    .logo{display:inline-block;font-size:20px;font-weight:750;letter-spacing:-.4px;text-decoration:none;cursor:pointer}
+    .logo span{color:#8a8f98;font-weight:500}
+    .file-name{font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .spacer{flex:1}
+    button{border:0;border-radius:11px;padding:10px 15px;font:inherit;font-size:14px;font-weight:650;cursor:pointer;transition:.15s}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .secondary{background:#f0f1f3;color:#222}
+    .secondary:hover:not(:disabled){background:#e7e8eb}
+    .primary{background:#111827;color:white}
+    .primary:hover:not(:disabled){background:#272d38}
+    .danger{background:#fff0f0;color:var(--danger)}
+    .danger:hover:not(:disabled){background:#ffe3e3}
+    main{width:min(1180px,calc(100% - 40px));margin:28px auto 50px;flex:1}
+    .drop{background:var(--card);border:1.5px dashed #cfd3da;border-radius:20px;padding:58px 24px;text-align:center;cursor:pointer;transition:.15s}
+    .drop:hover,.drop.drag{border-color:#777f8d;background:#fafafa}
+    .drop-icon{font-size:42px;margin-bottom:12px}
+    .drop h1{font-size:24px;margin:0 0 8px;letter-spacing:-.5px}
+    .drop p{color:var(--muted);margin:0 0 20px;font-size:14px}
+    #fileInput{display:none}
+    .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+    .counter{font-size:14px;color:var(--muted);margin-right:5px}
+    .hint{font-size:13px;color:var(--muted);margin-left:auto}
+    .pages{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px}
+    .page{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.03);transition:.15s}
+    .page.selected{border:2px solid #111827;padding:9px}
+    .page.removed{opacity:.38;filter:grayscale(1)}
+    .thumb{background:#eef0f3;border-radius:10px;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+    .thumb canvas{max-width:100%;max-height:100%;display:block}
+    .badge{position:absolute;left:8px;top:8px;background:rgba(17,24,39,.88);color:#fff;border-radius:8px;padding:4px 7px;font-size:11px;font-weight:700}
+    .page-footer{display:flex;align-items:center;justify-content:space-between;padding:9px 2px 1px;gap:8px}
+    .page-num{font-size:13px;color:var(--muted)}
+    .delete-page{padding:7px 9px;border-radius:9px;font-size:12px}
+    .empty{background:#fff;border-radius:18px;padding:35px;text-align:center;color:var(--muted)}
+    .status{margin-top:16px;color:var(--muted);font-size:13px;text-align:center;min-height:20px}
+    .modal-back{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;padding:20px;z-index:30}
+    .modal{background:#fff;border-radius:18px;padding:24px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+    .modal h2{margin:0 0 8px;font-size:20px}.modal p{color:var(--muted);font-size:14px;line-height:1.5}
+    .modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}
+    @media(max-width:600px){header{padding:0 15px}.file-name{display:none}main{width:calc(100% - 24px);margin-top:18px}.pages{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.hint{width:100%;margin-left:0}}
+
+    :root{--bg:#f0f6fb;--card:#fff;--text:#1d354a;--muted:#637d94;--line:#d9e7f1;--accent:#477fa9;--danger:#557fa2}
+    body{background-color:var(--bg);background-image:radial-gradient(circle,rgba(141,183,212,.22) 1px,transparent 1.7px),radial-gradient(circle,rgba(255,255,255,.95) 1.3px,transparent 2px),linear-gradient(140deg,#eef6fc,#f8fbff 52%,#edf5fb);background-size:45px 45px,78px 78px,100% 100%;background-position:0 0,17px 13px,0 0;color:var(--text)}
+    header{height:78px;background:rgba(255,255,255,.9);border-bottom:1px solid #d9e7f1;box-shadow:0 5px 22px rgba(44,83,112,.07);backdrop-filter:blur(12px);position:sticky;isolation:isolate}
+    header::before{content:"";position:absolute;top:0;left:0;right:0;height:8px;background:repeating-radial-gradient(circle at 18px 8px,#b7e4fa 0 4px,transparent 5px 44px),linear-gradient(#a9c9df,#a9c9df);background-size:44px 9px,100% 2px;background-position:0 0,0 0;background-repeat:repeat-x,no-repeat;filter:drop-shadow(0 1px 5px rgba(143,198,229,.7));pointer-events:none;z-index:-1}
+    .logo{color:#244964}.logo span{color:#7896ad}
+    button{border:1px solid transparent;transition:transform .16s,box-shadow .16s,background .16s,border-color .16s}
+    button:not(:disabled):hover{transform:none;box-shadow:0 7px 17px rgba(73,121,158,.16)}
+    button:focus-visible,.drop:focus-visible{outline:3px solid #8dbce0;outline-offset:3px}
+    .secondary{background:#eff6fb;color:#365b78;border-color:#d9e8f3}
+    .secondary:hover:not(:disabled){background:#e5f1f9;border-color:#b9d5e8}
+    .primary{background:linear-gradient(145deg,#5d94ba,#47799f);color:#fff;box-shadow:0 5px 14px rgba(65,118,158,.25)}
+    .primary:hover:not(:disabled){background:linear-gradient(145deg,#4f83a8,#3e6d91);box-shadow:0 8px 19px rgba(65,118,158,.3)}
+    .danger{background:#eef4fa;color:#557798;border-color:#d4e1ec}
+    .danger:hover:not(:disabled){background:#e3eef7;border-color:#b7d0e3}
+    main{position:relative}
+    .drop{position:relative;overflow:hidden;background:rgba(255,255,255,.88);border:2px dashed #b8d1e3;box-shadow:0 14px 36px rgba(43,82,112,.08);backdrop-filter:blur(8px)}
+    .drop::before{content:"❄　✧　❄";position:absolute;top:14px;right:18px;color:#b6d3e7;font-size:17px;letter-spacing:.25em;pointer-events:none}
+    .drop:hover,.drop.drag{border-color:#77a9cb;background:#f8fcff;box-shadow:0 16px 38px rgba(71,127,169,.14)}
+    .drop-icon{filter:drop-shadow(0 5px 8px rgba(104,158,197,.2))}
+    .drop h1{color:#254c69}
+    .drop p,.counter,.hint,.page-num,.status{color:#637d94}
+    .toolbar{padding:12px;background:rgba(255,255,255,.58);border:1px solid #e0ebf3;border-radius:16px}
+    .page{position:relative;background:rgba(255,255,255,.92);border-color:#dce8f1;box-shadow:0 6px 18px rgba(43,82,112,.055)}
+    .page::after{content:"✧";position:absolute;top:13px;right:14px;color:#b4d0e4;opacity:0;transform:scale(.7);transition:.18s;pointer-events:none}
+    .page:hover{border-color:#b4d1e4;box-shadow:0 12px 26px rgba(43,82,112,.12);transform:none}
+    .page:hover::after{opacity:.9;transform:scale(1) rotate(18deg)}
+    .page.selected{border:2px solid #6297bc;box-shadow:0 0 0 3px rgba(110,164,201,.15)}
+    .thumb{background:linear-gradient(145deg,#eaf2f8,#f7fbff);border:1px solid #e2ebf2}
+    .badge{background:rgba(58,100,134,.9);box-shadow:0 3px 10px rgba(38,73,102,.15)}
+    .modal-back{background:rgba(26,54,76,.34);backdrop-filter:blur(4px)}
+    .modal{border:1px solid #dae8f2;box-shadow:0 24px 70px rgba(29,62,88,.2)}
+    .empty{background:#f7fbfe;border:1px dashed #d2e3ef;color:#607c93}
+    @media(prefers-reduced-motion:reduce){button,.page,.page::after{transition:none!important}}
+
+
+    body[data-season="spring"]{--bg:#f1f8f3;--line:#dcece1;--accent:#568a6b;--danger:#668f78;background-image:radial-gradient(circle,rgba(154,199,168,.18) 1px,transparent 1.7px),radial-gradient(circle,rgba(255,255,255,.95) 1.3px,transparent 2px),linear-gradient(140deg,#edf7f0,#fbfdfb 52%,#eef7f0)}
+    body[data-season="spring"] header{border-color:#dcece1;box-shadow:0 5px 22px rgba(55,105,72,.07)}
+    body[data-season="spring"] header::before{background:repeating-radial-gradient(circle at 18px 8px,#b8e5cb 0 4px,transparent 5px 44px),linear-gradient(#acd1bb,#acd1bb);background-size:44px 9px,100% 2px;background-position:0 0,0 0;background-repeat:repeat-x,no-repeat}
+    body[data-season="spring"] .primary{background:linear-gradient(145deg,#72a989,#54866a)} body[data-season="spring"] .primary:hover:not(:disabled){background:linear-gradient(145deg,#5f9677,#477459)}
+    body[data-season="spring"] .drop{border-color:#bed8c6} body[data-season="spring"] .drop:hover,body[data-season="spring"] .drop.drag{border-color:#80b292;background:#f8fcf9}
+    body[data-season="spring"] .drop::before{content:"✿　❀　✿";color:#a7cdb2} body[data-season="spring"] .page.selected{border-color:#72a989;box-shadow:0 0 0 3px rgba(114,169,137,.15)}
+    body[data-season="spring"] .badge{background:rgba(68,117,85,.9)}
+    body[data-season="autumn"]{--bg:#f5f3ed;--line:#e7e2d6;--accent:#7d806e;--danger:#777e70;background-image:radial-gradient(circle,rgba(187,177,150,.2) 1px,transparent 1.7px),radial-gradient(circle,rgba(255,255,255,.95) 1.3px,transparent 2px),linear-gradient(140deg,#f3f1e9,#fcfbf7 52%,#f2efe6)}
+    body[data-season="autumn"] header{border-color:#e5e0d5;box-shadow:0 5px 22px rgba(87,82,66,.07)}
+    body[data-season="autumn"] header::before{background:repeating-radial-gradient(circle at 18px 8px,#c8c5b6 0 4px,transparent 5px 44px),linear-gradient(#c8c5b6,#c8c5b6);background-size:44px 9px,100% 2px;background-position:0 0,0 0;background-repeat:repeat-x,no-repeat}
+    body[data-season="autumn"] .primary{background:linear-gradient(145deg,#89917f,#707a6b)} body[data-season="autumn"] .primary:hover:not(:disabled){background:linear-gradient(145deg,#76806f,#636d5f)}
+    body[data-season="autumn"] .drop{border-color:#d4d0c2} body[data-season="autumn"] .drop:hover,body[data-season="autumn"] .drop.drag{border-color:#a9aa98;background:#fbfaf6}
+    body[data-season="autumn"] .drop::before{content:"❧　✧　❧";color:#b9b49f} body[data-season="autumn"] .page.selected{border-color:#89917f;box-shadow:0 0 0 3px rgba(137,145,127,.15)}
+    body[data-season="autumn"] .badge{background:rgba(94,105,89,.9)}
+
+
+    body::before,body::after{position:fixed;z-index:0;pointer-events:none;font-size:clamp(110px,17vw,220px);opacity:.11;line-height:1}
+    body::before{content:"";left:-24px;top:22vh}body::after{content:"";right:-24px;bottom:8vh}
+    .app{position:relative;z-index:1}
+    body[data-season="winter"]::before{content:"❄";color:#568bb4;transform:rotate(-13deg)}body[data-season="winter"]::after{content:"❅";color:#73a4c8;transform:rotate(13deg)}
+    body[data-season="spring"]{--bg:#f1f8f3;--line:#dcece1;--accent:#568a6b;--danger:#668f78;background-image:radial-gradient(circle at 10% 8%,rgba(185,224,195,.36),transparent 26%),linear-gradient(140deg,#eff8f1,#fbfdfb 60%,#eef7f0)}
+    body[data-season="spring"]::before{content:"✿";color:#70a987;transform:rotate(-18deg)}body[data-season="spring"]::after{content:"❀";color:#84b996;transform:rotate(17deg)}
+    body[data-season="spring"] header::before{display:none}body[data-season="spring"] header::after{content:"✿　❀　✿";position:absolute;right:28px;top:8px;color:#b9d7be;font-size:13px;letter-spacing:.4em;pointer-events:none}
+    body[data-season="spring"] .primary{background:linear-gradient(145deg,#72a989,#54866a)}body[data-season="spring"] .primary:hover:not(:disabled){background:linear-gradient(145deg,#5f9677,#477459)}body[data-season="spring"] .drop{border-color:#bed8c6;background:linear-gradient(145deg,#fff,#f5fbf6)}body[data-season="spring"] .drop::before{content:"✿　❀　✿";color:#a7cdb2}
+    body[data-season="spring"] .page.selected{border-color:#72a989;box-shadow:0 0 0 3px rgba(114,169,137,.15)}body[data-season="spring"] .badge{background:rgba(68,117,85,.9)}
+    body[data-season="summer"]{--bg:#eef8f8;--line:#d4e9e8;--accent:#388e98;--danger:#548b91;background-image:radial-gradient(circle at 86% 12%,rgba(255,221,139,.3),transparent 22%),linear-gradient(145deg,#edf9fa,#fbfdfb 60%,#eaf6f4)}
+    body[data-season="summer"]::before{content:"☼";color:#d2a846;transform:rotate(-12deg)}body[data-season="summer"]::after{content:"〰";color:#4cabb2;transform:rotate(-10deg)}
+    body[data-season="summer"] header::before{display:none}body[data-season="summer"] header::after{content:"☼  ·  〰  ·  ☼";position:absolute;right:28px;top:6px;color:#9fcfd0;font-size:15px;letter-spacing:.35em;pointer-events:none}
+    body[data-season="summer"] .primary{background:linear-gradient(145deg,#56afb5,#388e98)}body[data-season="summer"] .primary:hover:not(:disabled){background:linear-gradient(145deg,#449da4,#2d7f89)}body[data-season="summer"] .drop{border-color:#a9d6d5;background:linear-gradient(145deg,#fff,#f1fbfa)}body[data-season="summer"] .drop::before{content:"☼　✦　〰";color:#87bfc2}
+    body[data-season="summer"] .page.selected{border-color:#56afb5;box-shadow:0 0 0 3px rgba(86,175,181,.16)}body[data-season="summer"] .badge{background:rgba(47,126,135,.92)}
+    body[data-season="autumn"]{--bg:#f5f3ed;--line:#e7e2d6;--accent:#7d806e;--danger:#777e70;background-image:radial-gradient(circle at 10% 8%,rgba(215,207,184,.38),transparent 26%),linear-gradient(140deg,#f5f2e9,#fcfbf7 60%,#f2efe6)}
+    body[data-season="autumn"]::before{content:"❧";color:#9d8f6f;transform:rotate(-24deg)}body[data-season="autumn"]::after{content:"❦";color:#aa9471;transform:rotate(22deg)}
+    body[data-season="autumn"] header::before{display:none}body[data-season="autumn"] header::after{content:"❧　✧　❧";position:absolute;right:28px;top:7px;color:#b3aa91;font-size:14px;letter-spacing:.35em;pointer-events:none}
+    body[data-season="autumn"] .primary{background:linear-gradient(145deg,#89917f,#707a6b)}body[data-season="autumn"] .primary:hover:not(:disabled){background:linear-gradient(145deg,#76806f,#636d5f)}body[data-season="autumn"] .drop{border-color:#d4d0c2;background:linear-gradient(145deg,#fff,#faf8f1)}body[data-season="autumn"] .drop::before{content:"❧　✧　❧";color:#b9b49f}
+    body[data-season="autumn"] .page.selected{border-color:#89917f;box-shadow:0 0 0 3px rgba(137,145,127,.15)}body[data-season="autumn"] .badge{background:rgba(94,105,89,.9)}
+    @media(max-width:600px){body[data-season] header::after{right:8px;top:auto;bottom:4px;font-size:11px}}
+
+    /* Spring garden: blossoms, soft leaf greens, luminous upload surface. */
+    body[data-season="spring"]{--bg:#f3f8ef;--line:#dce8d4;--accent:#527f5d;background:radial-gradient(ellipse at 18% 0%,#e5f1dd,transparent 36%),linear-gradient(145deg,#f1f7ec,#fcfcf7 58%,#eff5e9)}
+    body[data-season="spring"]::before{content:"✿";color:#b8879b;font-size:clamp(150px,22vw,280px);left:-25px;top:20vh}body[data-season="spring"]::after{content:"❀";color:#8ca984;font-size:clamp(130px,19vw,240px);right:-20px;bottom:9vh}
+    body[data-season="spring"] header::before{display:none}body[data-season="spring"] header::after{content:"✿　❀　✿";position:absolute;right:28px;top:7px;color:#bd91a3;font-size:14px;letter-spacing:.4em;pointer-events:none}
+    body[data-season="spring"] .primary{background:linear-gradient(145deg,#72a27a,#507d5b)}body[data-season="spring"] .primary:hover:not(:disabled){background:linear-gradient(145deg,#608e68,#426d4e)}
+    body[data-season="spring"] .drop{border-color:#bdd1b3;background:linear-gradient(145deg,#fff,#f4f9f0);box-shadow:0 18px 42px rgba(78,112,68,.1)}body[data-season="spring"] .drop:hover,body[data-season="spring"] .drop.drag{border-color:#88ac7e;background:#f8fbf4}
+    body[data-season="spring"] .drop::before{content:"✿　✧　❀";color:#b58da0;font-size:19px}body[data-season="spring"] .drop-icon{filter:hue-rotate(55deg) drop-shadow(0 5px 8px rgba(104,158,115,.2))}
+    body[data-season="spring"] .toolbar{background:rgba(248,251,244,.85);border-color:#e0ead9}body[data-season="spring"] .page{background:#fffefa;border-color:#dfe8d7}body[data-season="spring"] .page:hover{border-color:#b9cfad;box-shadow:0 12px 26px rgba(72,108,68,.13)}
+    body[data-season="spring"] .page.selected{border-color:#72a27a;box-shadow:0 0 0 3px rgba(114,162,122,.16)}body[data-season="spring"] .badge{background:rgba(68,105,75,.9)}
+
+    /* Summer coast: sunlit aqua surfaces, wave edges, deep lagoon controls. */
+    body[data-season="summer"]{--bg:#edf8f7;--line:#d3e9e7;--accent:#318c96;background:radial-gradient(circle at 88% 11%,rgba(255,221,134,.36),transparent 21%),linear-gradient(145deg,#eaf7f7,#fbfcf7 58%,#e8f5f2)}
+    body[data-season="summer"]::before{content:"☼";color:#c9a24d;font-size:clamp(165px,24vw,290px);left:auto;right:-25px;top:15vh}body[data-season="summer"]::after{content:"〰";color:#56a9ad;font-size:clamp(130px,20vw,250px);right:auto;left:-18px;bottom:8vh}
+    body[data-season="summer"] header::before{display:none}body[data-season="summer"] header::after{content:"☼　·　〰　·　☼";position:absolute;right:28px;top:7px;color:#8ebfc0;font-size:15px;letter-spacing:.3em;pointer-events:none}
+    body[data-season="summer"] .primary{background:linear-gradient(145deg,#4baab0,#307f8b)}body[data-season="summer"] .primary:hover:not(:disabled){background:linear-gradient(145deg,#3c999f,#286e7b)}
+    body[data-season="summer"] .drop{border:2px solid #b5dedd;background:linear-gradient(145deg,#fff,#effafa);box-shadow:0 18px 42px rgba(43,123,128,.11)}body[data-season="summer"] .drop:hover,body[data-season="summer"] .drop.drag{border-color:#69b5b6;background:#f7fcfa}
+    body[data-season="summer"] .drop::before{content:"☼　✦　〰";color:#79b5b7;font-size:18px}body[data-season="summer"] .drop-icon{filter:drop-shadow(0 5px 8px rgba(62,155,163,.25))}
+    body[data-season="summer"] .toolbar{background:rgba(241,250,248,.88);border-color:#d8ebe8}body[data-season="summer"] .page{background:#fff;border-color:#d6e9e7}body[data-season="summer"] .page:hover{border-color:#9ecfce;box-shadow:0 12px 26px rgba(43,123,128,.14)}
+    body[data-season="summer"] .page.selected{border-color:#4baab0;box-shadow:0 0 0 3px rgba(75,170,176,.17)}body[data-season="summer"] .badge{background:rgba(45,119,129,.92)}
+
+    /* Autumn reading-room: parchment, botanical shadows, muted olive ink. */
+    body[data-season="autumn"]{--bg:#f4f1e8;--line:#e5dece;--accent:#727b64;background:radial-gradient(ellipse at 12% 0%,#e9e4d4,transparent 34%),linear-gradient(145deg,#f3f0e5,#fbf9f2 58%,#eeeade)}
+    body[data-season="autumn"]::before{content:"❧";color:#85856e;font-size:clamp(160px,23vw,280px);left:-34px;top:19vh;transform:rotate(-25deg)}body[data-season="autumn"]::after{content:"❦";color:#a39272;font-size:clamp(140px,20vw,250px);right:-26px;bottom:8vh;transform:rotate(18deg)}
+    body[data-season="autumn"] header::before{display:none}body[data-season="autumn"] header::after{content:"❧　✧　❧";position:absolute;right:28px;top:7px;color:#aaa084;font-size:15px;letter-spacing:.3em;pointer-events:none}
+    body[data-season="autumn"] .primary{background:linear-gradient(145deg,#828b73,#626f5c)}body[data-season="autumn"] .primary:hover:not(:disabled){background:linear-gradient(145deg,#727c65,#56634f)}
+    body[data-season="autumn"] .drop{border-color:#d5cbb3;background:linear-gradient(145deg,#fffdf7,#f7f3e8);box-shadow:0 18px 42px rgba(95,84,60,.1)}body[data-season="autumn"] .drop:hover,body[data-season="autumn"] .drop.drag{border-color:#b6ad91;background:#fbf8ef}
+    body[data-season="autumn"] .drop::before{content:"❧　✧　❦";color:#a49778;font-size:18px}body[data-season="autumn"] .drop-icon{filter:sepia(.22) drop-shadow(0 5px 8px rgba(127,115,81,.2))}
+    body[data-season="autumn"] .toolbar{background:rgba(250,248,239,.9);border-color:#e6dfd0}body[data-season="autumn"] .page{background:#fffdf8;border-color:#e7e0d2}body[data-season="autumn"] .page:hover{border-color:#c9c0a9;box-shadow:0 12px 26px rgba(95,84,60,.14)}
+    body[data-season="autumn"] .page.selected{border-color:#828b73;box-shadow:0 0 0 3px rgba(130,139,115,.17)}body[data-season="autumn"] .badge{background:rgba(82,94,72,.92)}
+    .drop-scene{position:absolute;right:18px;top:18px;width:155px;height:112px;opacity:.72;filter:drop-shadow(0 8px 12px rgba(55,70,50,.12));pointer-events:none}
+    .drop-scene--spring,.drop-scene--summer,.drop-scene--autumn{display:none}
+    body[data-season="spring"] .drop-scene--spring,body[data-season="summer"] .drop-scene--summer,body[data-season="autumn"] .drop-scene--autumn{display:block}
+    body[data-season="spring"] .drop-scene{opacity:.72}
+    body[data-season="summer"] .drop-scene{opacity:.88;filter:drop-shadow(0 8px 12px rgba(45,123,128,.14))}
+    body[data-season="autumn"] .drop-scene{opacity:.88;filter:drop-shadow(0 9px 12px rgba(88,55,37,.18))}
+    body[data-season="spring"] .page::after{content:"✿";color:#c49caf}body[data-season="summer"] .page::after{content:"☼";color:#c5a44e}body[data-season="autumn"] .page::after{content:"❧";color:#b27a52}
+    body[data-season="spring"] .drop::before{content:"✿　✧　❀";color:#b58da0}
+    body[data-season="summer"] .drop::before{content:"☼　✦　〰";color:#4e9fa4}
+    body[data-season="autumn"]{--bg:#f3e8d8;--line:#e4cfb5;--accent:#684432;--danger:#a56343;background:radial-gradient(ellipse at 20% 0%,#e9d2b7,transparent 38%),linear-gradient(145deg,#f1e3cf,#fbf5eb 58%,#ead7bd)}
+    body[data-season="autumn"]::before{content:"❧";color:#986c4d;opacity:.14}body[data-season="autumn"]::after{content:"☕";font-size:clamp(100px,15vw,185px);color:#86543a;opacity:.12}
+    body[data-season="autumn"] header{background:rgba(255,249,239,.92);border-color:#e0c8aa;box-shadow:0 5px 22px rgba(93,57,36,.1)}
+    body[data-season="autumn"] .logo{color:#50372a}body[data-season="autumn"] .logo span{color:#95765b}
+    body[data-season="autumn"] .primary{background:linear-gradient(145deg,#80533e,#5e3c2e);box-shadow:0 5px 14px rgba(87,55,38,.24)}body[data-season="autumn"] .primary:hover:not(:disabled){background:#4e3227}
+    body[data-season="autumn"] .drop{border:1px solid #d9bea0;background:linear-gradient(145deg,#fff9ef,#f5e8d5);box-shadow:0 18px 42px rgba(92,59,39,.13)}body[data-season="autumn"] .drop:hover,body[data-season="autumn"] .drop.drag{border-color:#b88661;background:#fbf2e6}
+    body[data-season="autumn"] .drop h1{color:#563a2b}body[data-season="autumn"] .drop p{color:#826b56}
+    body[data-season="autumn"] .toolbar{background:rgba(250,242,229,.92);border-color:#e4cfb5}
+    body[data-season="autumn"] .page{background:#fff9ef;border-color:#e3cfb8;box-shadow:0 6px 18px rgba(92,59,39,.08)}body[data-season="autumn"] .page:hover{border-color:#c99b75;box-shadow:0 12px 26px rgba(92,59,39,.16)}
+    body[data-season="autumn"] .page.selected{border-color:#9a6747;box-shadow:0 0 0 3px rgba(154,103,71,.17)}body[data-season="autumn"] .badge{background:rgba(89,57,41,.92)}
+    body[data-season="autumn"] .danger{background:#f4e5d8;color:#89553d;border-color:#e4c9b2}body[data-season="autumn"] .danger:hover:not(:disabled){background:#ecd6c3}
+    @media(max-width:600px){.drop-scene{width:100px;height:76px;right:6px;top:8px;opacity:.42}body[data-season="spring"] .drop-scene{opacity:.3}}
+    body[data-season="spring"] .secondary{background:#edf2e7;color:#526a4d;border-color:#dce5d2}
+    body[data-season="summer"] .secondary{background:#e6f2ef;color:#3d777a;border-color:#cfe5e1}
+    body[data-season="autumn"] .secondary{background:#f0e1ce;color:#765039;border-color:#e1c9ad}
+    body[data-season="spring"] button:focus-visible{outline-color:#88a878}body[data-season="summer"] button:focus-visible{outline-color:#56aeb1}body[data-season="autumn"] button:focus-visible{outline-color:#ad7952}
+
+    .toolbar{align-items:center;gap:9px}.toolbar button{white-space:nowrap}
+    .page{cursor:grab}.page:active{cursor:grabbing}.page.dragging{opacity:.42;border-style:dashed}
+    .page.duplicated{border-style:dashed}
+    .blank-thumb{background:linear-gradient(145deg,#fff,#f5f8fa);border:1px dashed #bacbd8}
+    .blank-label{color:#7a8e9e;font-size:13px;letter-spacing:.04em}
+    button:not(:disabled):hover{transform:none!important}
+    .page:hover{transform:none!important}
+    .page::after{content:none!important;display:none!important}
+    @media(max-width:600px){.toolbar button{flex:1 1 calc(50% - 10px);white-space:normal}.toolbar .hint{order:10}}
+
+  
+    /* Keep button hitboxes fixed: no transition, movement, or hover shadow. */
+    button,button::before,button::after{transition:none!important;animation:none!important;transform:none!important;filter:none!important}
+    button:not(:disabled):hover,button:focus-visible,button:active{opacity:1!important;visibility:visible!important;transform:none!important;filter:none!important;animation:none!important;box-shadow:none!important}
+    .page,.page::after{transition:none!important;animation:none!important}
+    .page:hover{transform:none!important;filter:none!important}
+
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="winter-garland" aria-hidden="true"></div>
+  <a class="logo" href="index.html" aria-label="Вернуться в главное меню">PDF <span>Editor</span></a>
+  <div class="file-name" id="fileName"></div>
+  <div class="spacer"></div>
+  <button class="secondary" id="newBtn" disabled>Другой PDF</button>
+  <button class="primary" id="downloadBtn" disabled>Скачать PDF</button>
+</header>
+
+<main>
+  <section class="drop" id="drop">
+    <svg class="drop-scene drop-scene--spring" viewBox="0 0 180 130" aria-hidden="true"><path d="M20 112Q74 70 150 23M67 80Q38 69 38 48q25 4 30 32m35-36q-3-23 15-34 12 22-13 39" fill="none" stroke="#819b75" stroke-width="4" stroke-linecap="round"/><g fill="#e6bdcb" stroke="#fff" stroke-width="2"><circle cx="91" cy="62" r="9"/><circle cx="103" cy="65" r="9"/><circle cx="97" cy="76" r="9"/><circle cx="97" cy="67" r="3" fill="#e4c987"/></g></svg>
+    <svg class="drop-scene drop-scene--summer" viewBox="0 0 180 130" aria-hidden="true"><circle cx="126" cy="37" r="22" fill="#efc66e"/><path d="M5 84q24-14 48 0t48 0 48 0 31 0v46H5Z" fill="#64b8bb"/><path d="M5 98q24-14 48 0t48 0 48 0 31 0" fill="none" stroke="#f4fbf5" stroke-width="4" stroke-linecap="round"/><g stroke="#dfa94e" stroke-width="3" stroke-linecap="round"><path d="M126 5v-8m0 82v-8m-32-34h-8m80 0h-8"/></g></svg>
+    <svg class="drop-scene drop-scene--autumn" viewBox="0 0 180 130" aria-hidden="true"><path d="M46 58h83l-11 53q-2 8-10 8H68q-8 0-10-8Z" fill="#ad704e" stroke="#78503c" stroke-width="4"/><path d="M52 65h72" stroke="#57382d" stroke-width="7"/><path d="M129 70h14q18 0 13 22-3 9-14 9" fill="none" stroke="#78503c" stroke-width="7"/><path d="M37 119h130" stroke="#937152" stroke-width="5" stroke-linecap="round"/><path d="M68 47q-7-16 5-29m32 29q-5-16 8-27" fill="none" stroke="#a78b6c" stroke-width="3" stroke-linecap="round"/><path d="M24 43Q6 25 24 9q21 13 0 34Zm132-2q-9-17 8-29 19 14-1 29Z" fill="#9a7956"/></svg>
+    <div class="drop-icon">📄</div>
+    <h1>Загрузите PDF</h1>
+    <p>Выберите файл или перетащите его сюда. Ничего не отправляется на сервер.</p>
+    <button class="primary" id="chooseBtn">Выбрать PDF</button>
+    <input id="fileInput" type="file" accept="application/pdf,.pdf">
+  </section>
+
+  <section id="editor" hidden>
+    <div class="toolbar">
+      <span class="counter" id="counter"></span>
+      <button class="secondary" id="selectAll">Выбрать все</button>
+      <button class="secondary" id="clearSelection">Снять выделение</button>
+      <button class="secondary" id="rotateLeft" title="Повернуть выделенные страницы влево">↶ Повернуть</button>
+      <button class="secondary" id="rotateRight" title="Повернуть выделенные страницы вправо">↷ Повернуть</button>
+      <button class="secondary" id="duplicateSelected">Дублировать</button>
+      <button class="secondary" id="addBlank">＋ Пустая страница</button>
+      <button class="secondary" id="restoreDeleted">Восстановить удалённые</button>
+      <button class="danger" id="deleteSelected">Удалить выбранные</button>
+      <span class="hint">Перетаскивайте карточки мышью, чтобы изменить порядок страниц.</span>
+    </div>
+    <div class="pages" id="pages"></div>
+    <div class="status" id="status"></div>
+  </section>
+</main>
+</div>
+
+<div class="modal-back" id="modal">
+  <div class="modal">
+    <h2>Добавить белые страницы?</h2>
+    <p id="modalText"></p>
+    <div class="modal-actions">
+      <button class="secondary" id="cancelModal">Отмена</button>
+      <button class="primary" id="confirmModal">Продолжить</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+
+  const { PDFDocument, rgb, degrees } = PDFLib;
+  const $ = id => document.getElementById(id);
+
+  let sourceBytes = null;
+  let sourcePdf = null;
+  let previewPdf = null;
+  let pages = []; // ordered page operations; originals, duplicates, blanks, rotation, deletion
+  let nextPageId = 1;
+  let draggedPageId = null;
+  let suppressCardClick = false;
+  let originalCount = 0;
+  let pageSize = null;
+  let pendingDeletion = null;
+
+  $("chooseBtn").onclick = () => $("fileInput").click();
+  $("drop").onclick = e => { if(e.target.id !== "chooseBtn") $("fileInput").click(); };
+  $("fileInput").onchange = e => e.target.files[0] && loadFile(e.target.files[0]);
+
+  ["dragenter","dragover"].forEach(ev => $("drop").addEventListener(ev, e => {e.preventDefault(); $("drop").classList.add("drag")}));
+  ["dragleave","drop"].forEach(ev => $("drop").addEventListener(ev, e => {e.preventDefault(); $("drop").classList.remove("drag")}));
+  $("drop").addEventListener("drop", e => {
+    const f = e.dataTransfer.files[0];
+    if(f && f.type === "application/pdf") loadFile(f);
+  });
+
+  $("newBtn").onclick = () => location.reload();
+  $("selectAll").onclick = () => { pages.filter(p => !p.deleted).forEach(p => p.selected = true); render(); };
+  $("clearSelection").onclick = () => { pages.forEach(p => p.selected = false); render(); };
+  $("rotateLeft").onclick = () => rotateSelected(-90);
+  $("rotateRight").onclick = () => rotateSelected(90);
+  $("duplicateSelected").onclick = () => {
+    const selected = pages.filter(p => !p.deleted && p.selected);
+    if(!selected.length) return;
+    selected.forEach(p => {
+      p.selected = false;
+      const copy = {...p, id:nextPageId++, selected:false, deleted:false, duplicate:true};
+      pages.splice(pages.indexOf(p)+1, 0, copy);
+    });
+    render();
+  };
+  $("addBlank").onclick = () => { pages.push({id:nextPageId++, originalIndex:null, blank:true, selected:false, deleted:false, rotation:0}); render(); };
+  $("restoreDeleted").onclick = () => { pages.forEach(p => { if(p.deleted){p.deleted=false; p.selected=false;} }); render(); };
+  $("deleteSelected").onclick = () => {
+    const selected = pages.filter(p => p.selected && !p.deleted);
+    if(!selected.length) return;
+    selected.forEach(p => p.deleted = true);
+    pages.forEach(p => p.selected = false);
+    render();
+  };
+  $("downloadBtn").onclick = buildPdf;
+
+  async function loadFile(file){
+    try{
+      setStatus("Открываю PDF…");
+      sourceBytes = new Uint8Array(await file.arrayBuffer());
+      sourcePdf = await PDFDocument.load(sourceBytes);
+      previewPdf = await pdfjsLib.getDocument({data:sourceBytes.slice()}).promise;
+      originalCount = sourcePdf.getPageCount();
+      const first = sourcePdf.getPage(0);
+      pageSize = { width:first.getWidth(), height:first.getHeight() };
+      nextPageId=1;
+      pages = Array.from({length:originalCount}, (_,i)=>({id:nextPageId++, originalIndex:i, rotation:0, deleted:false, selected:false}));
+      $("fileName").textContent = file.name;
+      $("drop").hidden = true;
+      $("editor").hidden = false;
+      $("newBtn").disabled = false;
+      $("downloadBtn").disabled = false;
+      await render();
+      setStatus("");
+    }catch(err){
+      alert("Не удалось открыть PDF. Возможно, файл повреждён или защищён.");
+      console.error(err);
+    }
+  }
+
+  async function render(){
+    const container = $("pages");
+    container.innerHTML = "";
+    const alive = pages.filter(p=>!p.deleted);
+    const removed = pages.length - alive.length;
+    const selectedCount = alive.filter(p=>p.selected).length;
+    $("counter").textContent = `${alive.length} ${plural(alive.length,"страница","страницы","страниц")} · выделено: ${selectedCount} · удалено: ${removed}`;
+    $("deleteSelected").disabled = selectedCount===0;
+    $("duplicateSelected").disabled = selectedCount===0;
+    $("rotateLeft").disabled = selectedCount===0;
+    $("rotateRight").disabled = selectedCount===0;
+    $("restoreDeleted").disabled = removed===0;
+    $("clearSelection").disabled = selectedCount===0;
+
+    if(!alive.length){
+      container.innerHTML = '<div class="empty">Все страницы удалены. Восстановите страницы или добавьте пустую страницу.</div>';
+      return;
+    }
+
+    const loading = alive.some(p=>!p.blank) ? previewPdf : null;
+    for(const [position,p] of alive.entries()){
+      const card = document.createElement("div");
+      card.className = "page" + (p.selected ? " selected":"") + (p.duplicate ? " duplicated":"");
+      card.draggable = true;
+      card.dataset.pageId = p.id;
+      const thumb = document.createElement("div");
+      thumb.className = "thumb";
+      const badge = document.createElement("div");
+      badge.className = "badge";
+      badge.textContent = p.blank ? "Пустая" : String(p.originalIndex + 1) + (p.duplicate ? " · копия" : "");
+      thumb.appendChild(badge);
+      card.appendChild(thumb);
+
+      const footer = document.createElement("div");
+      footer.className = "page-footer";
+      const num = document.createElement("span");
+      num.className = "page-num";
+      num.textContent = p.blank ? `Пустая страница · позиция ${position+1}` : `Страница ${p.originalIndex+1} · позиция ${position+1}${p.rotation ? ` · ${p.rotation}°` : ""}`;
+      const del = document.createElement("button");
+      del.className = "danger delete-page";
+      del.textContent = "Удалить";
+      del.onclick = (e)=>{e.stopPropagation(); p.deleted=true; p.selected=false; render()};
+      footer.append(num,del);
+      card.appendChild(footer);
+
+      card.onclick = ()=>{if(suppressCardClick) return; p.selected=!p.selected; render()};
+      card.addEventListener("dragstart",e=>{draggedPageId=p.id; suppressCardClick=true; card.classList.add("dragging"); e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain",String(p.id));});
+      card.addEventListener("dragover",e=>{e.preventDefault(); e.dataTransfer.dropEffect="move";});
+      card.addEventListener("drop",e=>{
+        e.preventDefault();
+        const from=pages.findIndex(x=>x.id===draggedPageId), to=pages.findIndex(x=>x.id===p.id);
+        if(from<0||to<0||from===to) return;
+        const [moved]=pages.splice(from,1); pages.splice(to,0,moved); render();
+      });
+      card.addEventListener("dragend",()=>{card.classList.remove("dragging"); draggedPageId=null; setTimeout(()=>suppressCardClick=false,0);});
+      container.appendChild(card);
+
+      if(p.blank){
+        thumb.classList.add("blank-thumb");
+        thumb.style.aspectRatio=(p.rotation%180) ? "4 / 3" : "3 / 4";
+        const blankLabel=document.createElement("span"); blankLabel.className="blank-label"; blankLabel.textContent="Пустая страница"; thumb.appendChild(blankLabel);
+        continue;
+      }
+      try{
+        const pg = await loading.getPage(p.originalIndex+1);
+        const rotation=((pg.rotate||0)+p.rotation+360)%360;
+        const baseViewport=pg.getViewport({scale:1,rotation});
+        const scale=Math.min(1,160/baseViewport.width);
+        const vp=pg.getViewport({scale,rotation});
+        const canvas=document.createElement("canvas"); canvas.width=Math.ceil(vp.width); canvas.height=Math.ceil(vp.height);
+        await pg.render({canvasContext:canvas.getContext("2d"),viewport:vp}).promise;
+        thumb.appendChild(canvas);
+      }catch(e){console.error(e);}
+    }
+  }
+
+  function rotateSelected(delta){
+    const selected=pages.filter(p=>!p.deleted&&p.selected);
+    if(!selected.length)return;
+    selected.forEach(p=>p.rotation=((p.rotation||0)+delta+360)%360);
+    render();
+  }
+
+  function setStatus(text){ $("status").textContent=text; }
+
+  async function buildPdf(){
+    const alive = pages.filter(p=>!p.deleted);
+    if(!alive.length){ alert("Нельзя создать PDF без страниц."); return; }
+
+    const remainder = alive.length % 4;
+    const blanks = remainder === 0 ? 0 : 4 - remainder;
+
+    if(blanks){
+      pendingDeletion = {alive, blanks};
+      $("modalText").textContent =
+        `Сейчас останется ${alive.length} ${plural(alive.length,"страница","страницы","страниц")}. ` +
+        `Чтобы количество стало кратно 4, в конец будут добавлены ${blanks} ${plural(blanks,"белая страница","белые страницы","белых страниц")} ` +
+        `размером ${Math.round(pageSize.width)} × ${Math.round(pageSize.height)} pt.`;
+      $("modal").style.display="flex";
+      return;
+    }
+    await actuallyBuild(alive,0);
+  }
+
+  $("cancelModal").onclick = () => { $("modal").style.display="none"; pendingDeletion=null; };
+  $("confirmModal").onclick = async () => {
+    $("modal").style.display="none";
+    if(pendingDeletion){
+      const x=pendingDeletion; pendingDeletion=null;
+      await actuallyBuild(x.alive,x.blanks);
+    }
+  };
+
+  async function actuallyBuild(alive, blanks){
+    try{
+      setStatus("Собираю новый PDF…");
+      $("downloadBtn").disabled=true;
+      const out = await PDFDocument.create();
+      const copied = await out.copyPages(sourcePdf, alive.filter(p=>!p.blank).map(p=>p.originalIndex));
+      let copiedIndex=0;
+      for(const entry of alive){
+        if(entry.blank){const landscape=entry.rotation%180!==0; out.addPage(landscape?[pageSize.height,pageSize.width]:[pageSize.width,pageSize.height]); continue;}
+        const page=copied[copiedIndex++];
+        if(entry.rotation){const current=page.getRotation().angle||0; page.setRotation(degrees((current+entry.rotation)%360));}
+        out.addPage(page);
+      }
+      for(let i=0;i<blanks;i++){
+        const blank=out.addPage([pageSize.width,pageSize.height]);
+        blank.drawRectangle({x:0,y:0,width:pageSize.width,height:pageSize.height,color:rgb(1,1,1)});
+      }
+      const bytes = await out.save();
+      const blob = new Blob([bytes],{type:"application/pdf"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      const base=($("fileName").textContent||"document.pdf").replace(/\.pdf$/i,"");
+      a.download=base+"-edited.pdf";
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+      setStatus(`Готово: ${alive.length + blanks} страниц.`);
+    }catch(err){
+      console.error(err);
+      alert("Не удалось создать PDF.");
+      setStatus("Ошибка при создании PDF.");
+    }finally{
+      $("downloadBtn").disabled=false;
+    }
+  }
+
+
+  document.addEventListener("keydown",e=>{
+    const tag=(e.target.tagName||"").toLowerCase();
+    if(tag==="input"||tag==="textarea"||e.target.isContentEditable)return;
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="a"&&!$("editor").hidden){e.preventDefault(); $("selectAll").click();}
+    if(e.key==="Delete"&&!$("editor").hidden&&!$("deleteSelected").disabled){e.preventDefault(); $("deleteSelected").click();}
+  });
+
+  function plural(n,a,b,c){
+    n=Math.abs(n)%100; const n1=n%10;
+    if(n>10&&n<20)return c;
+    if(n1>1&&n1<5)return b;
+    if(n1===1)return a;
+    return c;
+  }
+</script>
+<script>
+(()=>{
+  const allowed=['winter','spring','summer','autumn'];
+  const requested=new URLSearchParams(location.search).get('season');
+  let season=allowed.includes(requested)?requested:'';
+  if(!season){
+    const now=new Date(), month=now.getMonth()+1, day=now.getDate();
+    if((month===11&&day>=15)||month===12||month===1||(month===2&&day<=15)) season='winter';
+    else if((month===2&&day>=16)||month===3||month===4||(month===5&&day<=15)) season='spring';
+    else if((month===5&&day>=16)||month===6||month===7||month===8) season='summer';
+    else season='autumn';
+  }
+  document.body.dataset.season=season;
+})();
+</script>
+</body>
+</html>

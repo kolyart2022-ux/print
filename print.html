@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Тетради — калькулятор печати книжкой</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,560;9..144,680&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f4f7fb;
+    --paper:#ffffff;
+    --paper-2:#eef3f8;
+    --paper-3:#dce5ef;
+    --thread:#4169e1;
+    --thread-dark:#2f50bd;
+    --brass:#7183a0;
+    --green:#25856b;
+    --text-dark:#1d2939;
+    --text-light:#536278;
+    --muted:#77859a;
+    --muted-dark:#66758a;
+    --radius:14px;
+    --ease:cubic-bezier(.22,.9,.32,1);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--text-light);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.55;
+  }
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important; scroll-behavior:auto !important;} }
+  :focus-visible{outline:2px solid var(--thread); outline-offset:2px;}
+
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px;}
+  a{color:var(--thread);}
+
+  /* ---------- sticky step nav ---------- */
+  .stepnav{
+    position:sticky;top:0;z-index:50;
+    background:rgba(27,30,39,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(241,234,217,.08);
+    transform:translateY(-100%);opacity:0;
+    transition:transform .35s var(--ease), opacity .35s var(--ease);
+    pointer-events:none;
+  }
+  .stepnav.visible{transform:translateY(0);opacity:1;pointer-events:auto;}
+  .stepnav-inner{display:flex;gap:6px;padding:10px 24px;}
+  .stepnav a{
+    font-size:12.5px;font-weight:600;color:var(--muted);text-decoration:none;
+    padding:7px 13px;border-radius:100px;transition:color .2s,background .2s;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .stepnav a:hover{color:var(--text-light);}
+  .stepnav a.active{color:var(--text-light);background:rgba(193,68,58,.28);}
+
+  header.hero{
+    padding:56px 0 36px;
+    background:radial-gradient(ellipse at 20% -10%, rgba(193,68,58,0.18), transparent 55%), var(--ink);
+    border-bottom:1px solid rgba(241,234,217,0.08);
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--brass);margin-bottom:16px;
+    animation:fadeInUp .5s var(--ease) both;
+  }
+  .eyebrow::before{content:"✂";font-size:13px;transform:rotate(90deg);display:inline-block;}
+  h1{
+    font-family:'Fraunces',serif;font-weight:560;font-size:clamp(30px,4.6vw,48px);
+    line-height:1.06;margin:0 0 14px;letter-spacing:-.01em;
+    animation:fadeInUp .55s .05s var(--ease) both;
+  }
+  h1 em{font-style:italic;font-weight:400;color:var(--thread);}
+  .lede{
+    max-width:58ch;color:var(--text-light);opacity:.8;font-size:16px;
+    text-align:justify;hyphens:auto;-webkit-hyphens:auto;
+    animation:fadeInUp .55s .1s var(--ease) both;
+  }
+  .stitches{display:flex;gap:7px;margin-top:28px;animation:fadeInUp .55s .15s var(--ease) both;}
+  .stitches span{width:22px;height:2px;background:var(--thread);opacity:.5;border-radius:2px;}
+
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  /* Small winter details reveal themselves during ordinary hover. */
+  button.btn,.fmt,.seq .copy{position:relative;}
+  .fmt::after,.seq .copy::after{
+    content:"❄";position:absolute;top:-9px;right:-6px;font-size:15px;line-height:1;
+    color:#6da3d4;opacity:0;transform:scale(.55) rotate(-25deg);
+    transition:opacity .18s ease,transform .22s ease;pointer-events:none;
+  }
+  .fmt:hover::after,.fmt:focus-within::after,.seq .copy:hover::after,.seq .copy:focus-visible::after{opacity:.95;transform:scale(1) rotate(12deg);}
+  section.card>h2::after{content:"❄";display:inline-block;margin-left:auto;padding-left:10px;color:#8db8dc;font-size:17px;opacity:0;transform:translateY(-3px) rotate(-15deg);transition:opacity .2s,transform .25s;}
+  section.card:hover>h2::after{opacity:.8;transform:translateY(0) rotate(12deg);}
+
+  main{padding:40px 0 90px;}
+  section.card{
+    position:relative;
+    background:var(--paper);color:var(--text-dark);border-radius:var(--radius);
+    padding:28px 30px 32px;margin-bottom:24px;
+    box-shadow:0 22px 45px -28px rgba(0,0,0,.55);border:1px solid rgba(0,0,0,.05);
+    overflow:hidden;
+    scroll-margin-top:64px;
+    opacity:0;transform:translateY(18px);
+    animation:fadeInUp .6s var(--ease) forwards;
+  }
+  section.card:nth-of-type(1){animation-delay:.08s;}
+  section.card:nth-of-type(2){animation-delay:.16s;}
+  section.card:nth-of-type(3){animation-delay:.24s;}
+  section.card:nth-of-type(4){animation-delay:.32s;}
+  section.card::after{
+    content:"";position:absolute;top:0;right:0;
+    border-style:solid;border-width:0 30px 30px 0;
+    border-color:transparent rgba(36,31,24,.06) transparent transparent;
+  }
+  section.card h2{
+    font-family:'Fraunces',serif;font-weight:560;font-size:21px;margin:0 0 4px;
+    display:flex;align-items:baseline;gap:10px;
+  }
+  section.card h2 .num{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--thread);
+    border:1px solid var(--thread);border-radius:100px;padding:2px 9px;
+  }
+  .sub{color:var(--muted-dark);font-size:13.5px;margin:0 0 20px;max-width:64ch;text-align:justify;hyphens:auto;-webkit-hyphens:auto;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media (max-width:640px){.grid{grid-template-columns:1fr;}}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;color:var(--text-dark);}
+  label .hint{display:block;font-weight:400;color:var(--muted-dark);font-size:12px;margin-top:2px;}
+
+  .stepper{display:flex;align-items:stretch;border:1.5px solid var(--paper-3);border-radius:9px;background:#fffdf6;overflow:hidden;transition:border-color .2s, box-shadow .2s;}
+  .stepper:focus-within{border-color:var(--thread);box-shadow:0 0 0 3px rgba(193,68,58,.12);}
+  .stepper button{
+    width:38px;flex:0 0 38px;border:none;background:transparent;color:var(--thread-dark);
+    font-size:18px;font-weight:700;cursor:pointer;padding:0;transition:background .15s, transform .1s;
+  }
+  .stepper button:hover{background:var(--paper-2);}
+  .stepper button:active{transform:scale(.88);}
+  .stepper input{
+    flex:1;min-width:0;border:none;background:transparent;text-align:center;
+    font-family:'IBM Plex Mono',monospace;font-size:17px;color:var(--text-dark);padding:10px 4px;outline:none;
+  }
+  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+  .pdf-hint{
+    display:inline-flex;align-items:center;gap:6px;margin-top:9px;
+    font-size:12.5px;color:var(--brass);background:transparent;border:none;
+    cursor:pointer;font-weight:600;padding:0;transition:color .15s;
+  }
+  .pdf-hint:hover{color:var(--thread-dark);text-decoration:underline;}
+  .pdf-hint.busy{opacity:.6;pointer-events:none;}
+
+  .formats{display:flex;gap:10px;flex-wrap:wrap;}
+  .fmt{flex:1 1 140px;border:1.5px solid var(--paper-3);background:#fffdf6;border-radius:11px;padding:12px 14px;cursor:pointer;position:relative;transition:border-color .18s, background .18s, transform .15s, box-shadow .18s;}
+  .fmt:hover{border-color:var(--brass);transform:translateY(-2px);box-shadow:0 8px 16px -10px rgba(0,0,0,.25);}
+  .fmt:active{transform:translateY(0) scale(.98);}
+  .fmt input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0;}
+  .fmt .title{font-weight:700;font-size:15px;transition:color .18s;}
+  .fmt .desc{font-size:12px;color:var(--muted-dark);margin-top:2px;}
+  .fmt.active{border-color:var(--thread);background:#fff8f0;}
+  .fmt.active .title{color:var(--thread-dark);}
+
+  .diagram{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin-top:24px;}
+  .diagram svg{flex:0 0 auto;transition:opacity .18s var(--ease);}
+  .diagram svg.fading{opacity:0;}
+  .diagram .legend{font-size:13px;color:var(--muted-dark);max-width:36ch;transition:opacity .18s var(--ease);}
+  .diagram .legend.fading{opacity:0;}
+  .diagram .legend b{color:var(--text-dark);}
+
+  .status-line{
+    display:flex;align-items:center;gap:10px;margin-top:20px;padding:11px 14px;
+    border-radius:9px;font-size:13.5px;background:#EEF4EC;color:#3f5a3d;border:1px solid #cfe1cc;
+    transition:background .3s, border-color .3s, color .3s;
+  }
+  .status-line.warn{background:#FBEDE0;color:#7a4b1a;border-color:#E7C9A3;}
+  .status-line .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:0 0 auto;transition:background .3s;}
+  .status-line.warn .dot{background:var(--brass);}
+
+  .row-actions{display:flex;justify-content:space-between;align-items:center;margin-top:26px;flex-wrap:wrap;gap:12px;}
+  button.btn{font-family:'Inter',sans-serif;font-weight:700;font-size:14px;border:none;border-radius:100px;padding:12px 24px;cursor:pointer;transition:transform .15s var(--ease), box-shadow .15s var(--ease), background .15s;}
+  button.btn:hover{transform:translateY(-1px);}
+  button.btn:active{transform:scale(.96);}
+  .btn-primary{background:var(--thread);color:#fff8f0;box-shadow:0 10px 24px -10px rgba(193,68,58,.7);}
+  .btn-primary:hover{background:var(--thread-dark);box-shadow:0 14px 28px -12px rgba(193,68,58,.8);}
+  .btn-ghost{background:transparent;color:var(--text-dark);border:1.5px solid var(--paper-3);}
+  .btn-ghost:hover{border-color:var(--brass);}
+
+  .stat-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .stat{flex:1 1 140px;background:#fffdf6;border:1px solid var(--paper-3);border-radius:11px;padding:15px 17px;transition:box-shadow .2s, transform .2s;}
+  .stat:hover{transform:translateY(-2px);box-shadow:0 10px 20px -14px rgba(0,0,0,.3);}
+  .stat .label{font-size:11.5px;color:var(--muted-dark);text-transform:uppercase;letter-spacing:.05em;}
+  .stat .value{font-family:'IBM Plex Mono',monospace;font-size:28px;font-weight:600;color:var(--thread-dark);margin-top:4px;font-variant-numeric:tabular-nums;}
+  .stat .value small{font-size:13px;font-weight:400;color:var(--muted-dark);}
+
+  .brosh-block{
+    border:1px solid var(--paper-3);border-radius:12px;padding:18px 20px;margin-top:18px;background:#fffdf6;
+    opacity:0;transform:translateY(10px);animation:fadeInUp .4s var(--ease) forwards;
+  }
+  .brosh-block h3{font-family:'Fraunces',serif;font-size:17px;font-weight:560;margin:0 0 4px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .brosh-block h3 span.tag{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--brass);border:1px solid var(--brass);border-radius:100px;padding:2px 10px;}
+  .brosh-block .method-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-dark);margin:16px 0 8px;}
+
+  .seq{display:flex;align-items:flex-start;gap:10px;background:var(--ink);color:var(--text-light);border-radius:9px;padding:11px 13px;margin-bottom:9px;transition:box-shadow .2s;}
+  .seq:hover{box-shadow:0 6px 18px -12px rgba(0,0,0,.6);}
+  .seq .side-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--brass);white-space:nowrap;padding-top:3px;min-width:150px;}
+  .seq code{font-family:'IBM Plex Mono',monospace;font-size:13.5px;color:var(--text-light);word-break:break-all;flex:1;}
+  .seq .copy{background:transparent;border:1px solid rgba(241,234,217,.35);color:var(--text-light);padding:5px 11px;font-size:11px;font-weight:600;border-radius:100px;flex:0 0 auto;cursor:pointer;transition:border-color .15s,color .15s,transform .15s;}
+  .seq .copy:hover{border-color:var(--thread);color:var(--thread);}
+  .seq .copy:active{transform:scale(.92);}
+
+  table.sheet-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:2px;}
+  table.sheet-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted-dark);padding:7px 9px;border-bottom:1.5px solid var(--paper-3);}
+  table.sheet-table td{padding:8px 9px;border-bottom:1px solid var(--paper-3);font-family:'IBM Plex Mono',monospace;transition:background .15s;}
+  table.sheet-table tr:hover td{background:#f5ecd8;}
+  table.sheet-table tr:last-child td{border-bottom:none;}
+
+  /* ---------- custom smooth accordion ---------- */
+  .acc-item{border-top:1px solid var(--paper-3);}
+  .acc-item:first-of-type{border-top:none;}
+  .acc-trigger{
+    width:100%;text-align:left;background:none;border:none;cursor:pointer;
+    padding:14px 0;font-weight:700;font-size:14.5px;color:var(--text-dark);
+    display:flex;align-items:center;gap:10px;
+  }
+  .acc-icon{
+    width:16px;height:16px;flex:0 0 auto;position:relative;
+  }
+  .acc-icon::before,.acc-icon::after{
+    content:"";position:absolute;background:var(--thread);border-radius:2px;
+    top:50%;left:50%;transform:translate(-50%,-50%);
+    transition:transform .3s var(--ease);
+  }
+  .acc-icon::before{width:14px;height:2px;}
+  .acc-icon::after{width:2px;height:14px;}
+  .acc-item.open .acc-icon::after{transform:translate(-50%,-50%) rotate(90deg) scale(0);}
+  .acc-item.open .acc-icon::before{transform:translate(-50%,-50%) rotate(180deg);}
+  .acc-panel{
+    display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s var(--ease);
+  }
+  .acc-item.open .acc-panel{grid-template-rows:1fr;}
+  .acc-inner{overflow:hidden;min-height:0;}
+  .acc-inner-pad{padding-bottom:16px;}
+  .acc-panel p{font-size:13.5px;color:var(--muted-dark);margin:9px 0 0 26px;max-width:66ch;text-align:justify;hyphens:auto;-webkit-hyphens:auto;}
+  .acc-panel ul{margin:9px 0 0 26px;padding-left:18px;font-size:13.5px;color:var(--muted-dark);}
+  .acc-panel li{margin-bottom:6px;}
+
+  footer{padding:0 0 60px;text-align:center;color:var(--muted);font-size:12px;}
+
+  /* Светлая современная тема. Изменения ниже затрагивают только оформление. */
+  :root{
+    --ink:#f4f7fb;
+    --paper:#ffffff;
+    --paper-2:#eef3f8;
+    --paper-3:#dce5ef;
+    --thread:#4169e1;
+    --thread-dark:#2f50bd;
+    --brass:#7183a0;
+    --green:#25856b;
+    --text-dark:#1d2939;
+    --text-light:#536278;
+    --muted:#77859a;
+    --muted-dark:#66758a;
+    --radius:20px;
+  }
+  body{background-color:#f4f7fb;background-image:radial-gradient(circle,rgba(135,174,207,.32) 1px,transparent 1.6px),radial-gradient(circle,rgba(255,255,255,.95) 1.4px,transparent 2px),linear-gradient(135deg,rgba(226,238,249,.35),transparent 40%);background-size:47px 47px,83px 83px,100% 100%;background-position:0 0,21px 15px,0 0;color:var(--text-dark);}
+  .stepnav{background:rgba(255,255,255,.88);border-bottom-color:#e5ebf2;box-shadow:0 5px 20px rgba(31,48,74,.05);}
+  .stepnav a{color:#64748b;}
+  .stepnav a:hover,.stepnav a.active{color:var(--thread-dark);}
+  .stepnav a.active{background:#edf2ff;}
+  header.hero{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 18% 0%,rgba(99,154,210,.2),transparent 55%),radial-gradient(ellipse at 88% 20%,rgba(184,218,240,.5),transparent 37%),linear-gradient(180deg,#fff 0%,#eff7ff 100%);border-bottom:1px solid #d9e8f4;}
+  header.hero::after{content:"❄";position:absolute;right:max(5vw,calc((100vw - 960px)/2));top:74px;z-index:-1;color:rgba(99,151,198,.11);font-size:clamp(110px,18vw,210px);line-height:1;transform:rotate(12deg);pointer-events:none;}
+  .hero .wrap{position:relative;z-index:1;}
+  .winter-garland{position:absolute;z-index:2;top:0;left:-2%;width:104%;height:38px;display:flex;justify-content:space-around;padding:0 3%;pointer-events:none;border-bottom:2px solid #9dbed4;border-radius:0 0 50% 50%;filter:drop-shadow(0 2px 3px rgba(104,153,190,.22));}
+  .winter-garland i{position:relative;display:block;width:12px;height:15px;margin-top:17px;border:1px solid rgba(255,255,255,.9);border-radius:48% 48% 55% 55%;background:#a9d9f2;box-shadow:0 0 14px 4px rgba(165,220,250,.72);animation:festiveGlow 2.8s ease-in-out infinite alternate;}
+  .winter-garland i:nth-child(even){background:#fff;box-shadow:0 0 14px 4px rgba(255,255,255,.85);animation-delay:.8s;}
+  .winter-garland i:nth-child(3n){background:#b8caff;box-shadow:0 0 14px 4px rgba(170,193,255,.75);animation-delay:1.3s;}
+  .winter-garland i::after{content:"";position:absolute;top:12px;left:4px;width:4px;height:clamp(8px,1.4vw,22px);background:linear-gradient(#d9efff,rgba(217,239,255,.08));clip-path:polygon(0 0,100% 0,72% 78%,50% 100%,25% 78%);opacity:.8;}
+  @keyframes festiveGlow{from{filter:brightness(.92);opacity:.78}to{filter:brightness(1.16);opacity:1}}
+  .winter-sparkles{margin:-4px 0 16px;color:#80afd1;font-size:16px;letter-spacing:.65em;text-shadow:0 0 10px rgba(139,192,226,.42);}
+  .seasonal-signoff{margin-bottom:9px;color:#83b4d8;font-size:18px;letter-spacing:.5em;text-shadow:0 0 10px rgba(139,192,226,.4);}
+  .winter-borders{height:7px;background:repeating-linear-gradient(135deg,#d5e9f7 0 8px,#f7fbff 8px 16px);border-top:1px solid #dceaf5;border-bottom:1px solid #dceaf5;}
+  @media(max-width:640px){header.hero::after{right:-12px;top:96px;font-size:120px;opacity:.7}.winter-garland i{width:8px;height:10px}.winter-sparkles{font-size:14px;letter-spacing:.4em}}
+  .eyebrow{color:var(--thread-dark);}
+  h1 em{color:var(--thread);}
+  .lede{color:#526176;opacity:1;}
+  .stitches span{background:var(--thread);opacity:.42;border-radius:10px;}
+  section.card{background:linear-gradient(145deg,#fff 70%,#f8fcff);border-color:#dfeaf3;border-top:2px solid #cfe3f2;box-shadow:0 14px 40px -26px rgba(34,55,88,.28);}
+  section.card::before{content:"✧　❄";position:absolute;right:22px;top:10px;color:#bdd8eb;font-size:13px;letter-spacing:.18em;pointer-events:none;}
+  section.card::after{display:none;}
+  section.card h2{color:#1d2939;}
+  section.card h2 .num{background:#f0f4ff;border-color:#dbe5ff;color:var(--thread-dark);}
+  .sub{color:#65748a;}
+  .stepper,.fmt,.stat,.brosh-block{background:#fbfcfe;border-color:#dce5ef;}
+  .stepper:focus-within{border-color:var(--thread);box-shadow:0 0 0 4px rgba(65,105,225,.12);}
+  .stepper button{color:var(--thread-dark);}
+  .stepper button:hover{background:#edf2ff;}
+  .stepper input{color:#1d2939;}
+  .pdf-hint{color:var(--thread-dark);}
+  .fmt:hover{border-color:#9db2ef;box-shadow:0 9px 22px -14px rgba(50,78,145,.35);}
+  .fmt.active{border-color:#7895ec;background:#f2f5ff;}
+  .fmt.active .title{color:var(--thread-dark);}
+  .diagram .legend{color:#65748a;}
+  .status-line{background:#eef7fc;color:#315f7d;border-color:#d2e8f5;}
+  .status-line.warn{background:#f0f5fb;color:#49647c;border-color:#d6e1ed;}
+  .status-line .dot{background:#6ba6cc;}
+  button.btn{border-radius:12px;}
+  .btn-primary{background:var(--thread);color:#fff;box-shadow:0 8px 20px -10px rgba(65,105,225,.45);}
+  .btn-primary:hover{background:var(--thread-dark);box-shadow:0 12px 26px -12px rgba(65,105,225,.62);}
+  .btn-ghost{background:#fff;color:#334155;border-color:#dce5ef;}
+  .btn-ghost:hover{border-color:#9db2ef;background:#f7f9ff;}
+  .stat{box-shadow:0 2px 8px rgba(31,48,74,.025);}
+  .stat .value{color:var(--thread-dark);}
+  .brosh-block h3 span.tag{color:#58709a;border-color:#cbd6e5;}
+  .seq{background:#f4f7fb;color:#27364a;border:1px solid #e1e8f1;}
+  .seq .side-label{color:#536b9b;}
+  .seq code{color:#27364a;}
+  .seq .copy{border:1px solid #d5deea;background:#fff;color:#425675;padding:6px 10px;font:600 11px 'Inter',sans-serif;border-radius:9px;}
+  .seq .copy:hover{border-color:#9db2e8;background:#f3f6ff;color:#304f9b;}
+  .seq .copy:focus-visible{outline:2px solid #6282d7;outline-offset:2px;}
+  @media(max-width:640px){.seq{flex-wrap:wrap;gap:8px}.seq .side-label{width:100%;min-width:0;white-space:normal}.seq code{min-width:0;overflow-wrap:anywhere}.seq .copy{margin-left:auto;}}
+  table.sheet-table th{color:#66758a;border-bottom-color:#dce5ef;}
+  table.sheet-table td{border-bottom-color:#e7edf4;}
+  table.sheet-table tr:hover td{background:#f5f8fd;}
+  .acc-item{border-top-color:#e5ebf2;}
+  .acc-trigger{color:#26364b;}
+  .acc-icon::before,.acc-icon::after{background:var(--thread);}
+  .acc-panel p,.acc-panel ul{color:#64748b;}
+  footer{color:#8290a3;}
+  :focus-visible{outline-color:var(--thread);}
+
+  @media print{
+    header.hero, .winter-borders, .winter-sparkles, .winter-garland, .stepnav, .row-actions, .btn-ghost, .copy, .pdf-hint, .acc-item, footer{display:none !important;}
+    body{background:#fff;color:#000;}
+    section.card{box-shadow:none;border:1px solid #ccc;opacity:1;transform:none;animation:none;}
+    section.card::after{display:none;}
+    .seq{background:#f2f2f2;color:#000;border:1px solid #ccc;}
+    .seq code{color:#000;}
+  }
+
+  body[data-season="spring"]{background:#f2f8f4}
+  body[data-season="spring"] header.hero{background:radial-gradient(ellipse at 18% 0%,rgba(135,198,157,.22),transparent 55%),radial-gradient(ellipse at 88% 20%,rgba(201,232,208,.55),transparent 37%),linear-gradient(180deg,#fff 0%,#f0f8f2 100%);border-color:#d8eade}
+  body[data-season="spring"] header.hero::after{content:"✿";color:rgba(109,170,130,.13)}
+  body[data-season="spring"] .winter-garland{border-color:#acd1bb}
+  body[data-season="spring"] .winter-garland i{background:#b8e5cb;box-shadow:0 0 14px 4px rgba(167,220,189,.7)}
+  body[data-season="spring"] .winter-garland i:nth-child(even){background:#fff;box-shadow:0 0 14px 4px rgba(255,255,255,.9)}
+  body[data-season="spring"] .winter-garland i:nth-child(3n){background:#d1c9ef;box-shadow:0 0 14px 4px rgba(193,182,232,.65)}
+  body[data-season="spring"] .winter-sparkles,body[data-season="spring"] .seasonal-signoff{color:#98c5a5;text-shadow:0 0 10px rgba(151,205,165,.4)}
+  body[data-season="spring"] .winter-borders{background:repeating-linear-gradient(135deg,#d9eee0 0 8px,#fbfefb 8px 16px);border-color:#d8eade}
+  body[data-season="spring"] section.card{border-color:#dcece1;border-top-color:#c6e1ce}
+  body[data-season="spring"] section.card::before{content:"✿　❀";color:#c0ddc7}
+  body[data-season="spring"] .status-line{background:#eff8f1;color:#416d4e;border-color:#d0e8d5}
+  body[data-season="spring"] .status-line.warn{background:#f2f7f1;color:#5c7460;border-color:#dce9dc}
+  body[data-season="spring"] .status-line .dot{background:#79ae88}
+  body[data-season="spring"] .btn-primary{background:#6b9d7a;box-shadow:0 8px 20px -10px rgba(89,145,105,.42)}
+  body[data-season="spring"] .btn-primary:hover{background:#578867;box-shadow:0 12px 26px -12px rgba(89,145,105,.6)}
+  body[data-season="spring"] .stepnav a.active{background:#e8f4eb;color:#4c7959}
+  body[data-season="spring"] .fmt.active{border-color:#8dbd98;background:#f1f8f2}
+  body[data-season="spring"] .fmt:hover{border-color:#a8d1b0;box-shadow:0 9px 22px -14px rgba(70,125,82,.28)}
+  body[data-season="spring"] .seq .copy:hover{border-color:#a9cdb0;background:#f1f8f2;color:#477151}
+
+  body[data-season="autumn"]{background:#f5f3ed}
+  body[data-season="autumn"] header.hero{background:radial-gradient(ellipse at 18% 0%,rgba(195,192,172,.28),transparent 55%),radial-gradient(ellipse at 88% 20%,rgba(223,222,205,.55),transparent 37%),linear-gradient(180deg,#fff 0%,#f6f5ef 100%);border-color:#e4e1d5}
+  body[data-season="autumn"] header.hero::after{content:"❧";color:rgba(143,143,118,.16)}
+  body[data-season="autumn"] .winter-garland{border-color:#c4c5b6}
+  body[data-season="autumn"] .winter-garland i{background:#c6c8b9;box-shadow:0 0 14px 4px rgba(196,198,180,.62)}
+  body[data-season="autumn"] .winter-garland i:nth-child(even){background:#fff;box-shadow:0 0 14px 4px rgba(255,255,255,.9)}
+  body[data-season="autumn"] .winter-garland i:nth-child(3n){background:#b9c9bd;box-shadow:0 0 14px 4px rgba(175,196,183,.68)}
+  body[data-season="autumn"] .winter-sparkles,body[data-season="autumn"] .seasonal-signoff{color:#aeb6a7;text-shadow:0 0 10px rgba(174,182,167,.4)}
+  body[data-season="autumn"] .winter-borders{background:repeating-linear-gradient(135deg,#e2e1d7 0 8px,#fdfdfa 8px 16px);border-color:#e4e1d5}
+  body[data-season="autumn"] section.card{border-color:#e6e3d9;border-top-color:#d4d5c8}
+  body[data-season="autumn"] section.card::before{content:"❧　✧";color:#c6c8b9}
+  body[data-season="autumn"] .status-line{background:#f1f5f0;color:#536c58;border-color:#dce6d9}
+  body[data-season="autumn"] .status-line.warn{background:#f3f4ef;color:#69705e;border-color:#e1e3d8}
+  body[data-season="autumn"] .status-line .dot{background:#91a08e}
+  body[data-season="autumn"] .btn-primary{background:#778671;box-shadow:0 8px 20px -10px rgba(111,129,107,.4)}
+  body[data-season="autumn"] .btn-primary:hover{background:#66765f;box-shadow:0 12px 26px -12px rgba(111,129,107,.58)}
+  body[data-season="autumn"] .stepnav a.active{background:#eef1e9;color:#64735f}
+  body[data-season="autumn"] .fmt.active{border-color:#a8b19c;background:#f3f5ef}
+  body[data-season="autumn"] .fmt:hover{border-color:#c3c7b7;box-shadow:0 9px 22px -14px rgba(99,112,89,.28)}
+  body[data-season="autumn"] .seq .copy:hover{border-color:#c3c7b7;background:#f2f4ee;color:#62715e}
+  @media print{body[data-season]{background:#fff} body[data-season] header.hero::after{display:none}}
+
+
+  /* Seasonal art direction: spring blossoms, summer sunlight, autumn foliage. */
+  body[data-season="spring"]{background:#f2f8f4}
+  body[data-season="spring"] header.hero{background:radial-gradient(ellipse at 18% 0%,rgba(135,198,157,.22),transparent 55%),radial-gradient(ellipse at 88% 20%,rgba(201,232,208,.55),transparent 37%),linear-gradient(180deg,#fff 0%,#f0f8f2 100%);border-color:#d8eade}
+  body[data-season="spring"] header.hero::after{content:"✿";color:rgba(109,170,130,.13)}
+  body[data-season="spring"] .winter-garland{height:38px;border:0;border-radius:0;filter:none}
+  body[data-season="spring"] .winter-garland::before{content:"";position:absolute;left:6%;right:6%;top:19px;height:14px;border-top:2px solid #a8c8aa;border-radius:50%;transform:rotate(-2deg)}
+  body[data-season="spring"] .winter-garland i{width:14px;height:14px;margin-top:10px;border:2px solid white;border-radius:50%;background:#e6b9cc;box-shadow:0 0 0 3px #f7e8ef,0 3px 8px rgba(91,133,103,.14);animation:blossomSway 3s ease-in-out infinite alternate}
+  body[data-season="spring"] .winter-garland i:nth-child(3n){background:#f2d9a1;box-shadow:0 0 0 3px #fbf1db,0 3px 8px rgba(91,133,103,.14)}body[data-season="spring"] .winter-garland i:nth-child(3n + 1){background:#c8dfc4;box-shadow:0 0 0 3px #edf5e9,0 3px 8px rgba(91,133,103,.14)}body[data-season="spring"] .winter-garland i:nth-child(even){background:#d5c9ed;box-shadow:0 0 0 3px #f0ebf8,0 3px 8px rgba(91,133,103,.14)}
+  @keyframes blossomSway{to{transform:translateY(2px) rotate(18deg)}}
+  body[data-season="spring"] .winter-sparkles{font-size:0}body[data-season="spring"] .winter-sparkles::before{content:"✿　❀　✿　❀　✿";font-size:17px;color:#9fc6a7}
+  body[data-season="spring"] .winter-borders{background:repeating-linear-gradient(135deg,#d9eee0 0 8px,#fbfefb 8px 16px);border-color:#d8eade}
+  body[data-season="spring"] section.card{border-color:#dcece1;border-top-color:#c6e1ce}body[data-season="spring"] section.card::before{content:"✿　❀";color:#c0ddc7}
+  body[data-season="spring"] .status-line{background:#eff8f1;color:#416d4e;border-color:#d0e8d5}body[data-season="spring"] .status-line.warn{background:#f2f7f1;color:#5c7460;border-color:#dce9dc}body[data-season="spring"] .status-line .dot{background:#79ae88}
+  body[data-season="spring"] .btn-primary{background:#6b9d7a;box-shadow:0 8px 20px -10px rgba(89,145,105,.42)}body[data-season="spring"] .btn-primary:hover{background:#578867;box-shadow:0 12px 26px -12px rgba(89,145,105,.6)}
+  body[data-season="spring"] .stepnav a.active{background:#e8f4eb;color:#4c7959}body[data-season="spring"] .fmt.active{border-color:#8dbd98;background:#f1f8f2}body[data-season="spring"] .fmt:hover{border-color:#a8d1b0;box-shadow:0 9px 22px -14px rgba(70,125,82,.28)}body[data-season="spring"] .seq .copy:hover{border-color:#a9cdb0;background:#f1f8f2;color:#477151}
+
+  body[data-season="summer"]{background:#eef8f8}
+  body[data-season="summer"] header.hero{background:radial-gradient(circle at 83% 22%,rgba(255,219,137,.42),transparent 20%),radial-gradient(ellipse at 10% 4%,rgba(116,203,210,.18),transparent 48%),linear-gradient(180deg,#fff 0%,#effafa 100%);border-color:#d7eaea}
+  body[data-season="summer"] header.hero::after{content:"☼";color:rgba(213,169,74,.15);font-size:clamp(170px,24vw,280px);right:max(7vw,calc((100vw - 960px)/2));top:52px}
+  body[data-season="summer"] .winter-garland{display:none}
+  body[data-season="summer"] .winter-sparkles{font-size:0;color:#87bec1}
+  body[data-season="summer"] .winter-sparkles::before{content:"☼　·　〰　·　☼";font-size:18px;letter-spacing:.35em;color:#76b7bb;text-shadow:0 0 12px rgba(115,190,196,.35)}
+  body[data-season="summer"] .winter-borders{height:9px;background:repeating-linear-gradient(180deg,#bfe2e1 0 2px,#e8f6f4 2px 5px,#fff 5px 9px);border-color:#d4e9e8}
+  body[data-season="summer"] section.card{border-color:#d4e9e8;border-top-color:#9fd0d0;background:linear-gradient(145deg,#fff 70%,#f1fbfa)}body[data-season="summer"] section.card::before{content:"☼　✦";color:#b6dada}
+  body[data-season="summer"] .status-line{background:#eef8f7;color:#376d70;border-color:#d1e9e7}body[data-season="summer"] .status-line.warn{background:#eff6f5;color:#557477;border-color:#d6e7e5}body[data-season="summer"] .status-line .dot{background:#61aeb3}
+  body[data-season="summer"] .btn-primary{background:#48a5ad;box-shadow:0 8px 20px -10px rgba(56,145,153,.44)}body[data-season="summer"] .btn-primary:hover{background:#348f98;box-shadow:0 12px 26px -12px rgba(56,145,153,.6)}
+  body[data-season="summer"] .stepnav a.active{background:#e4f3f3;color:#347a80}body[data-season="summer"] .fmt.active{border-color:#78b9bd;background:#eff9f8}body[data-season="summer"] .fmt:hover{border-color:#a2d0d1;box-shadow:0 9px 22px -14px rgba(56,132,139,.3)}body[data-season="summer"] .seq .copy:hover{border-color:#a2d0d1;background:#eff9f8;color:#347a80}
+
+  body[data-season="autumn"]{background:#f5f3ed}
+  body[data-season="autumn"] header.hero{background:radial-gradient(ellipse at 18% 0%,rgba(195,192,172,.28),transparent 55%),radial-gradient(ellipse at 88% 20%,rgba(223,222,205,.55),transparent 37%),linear-gradient(180deg,#fff 0%,#f6f5ef 100%);border-color:#e4e1d5}
+  body[data-season="autumn"] header.hero::after{content:"❧";color:rgba(143,143,118,.16)}
+  body[data-season="autumn"] .winter-garland{height:38px;border:0;border-radius:0;filter:none}
+  body[data-season="autumn"] .winter-garland::before{content:"";position:absolute;left:7%;right:7%;top:19px;height:14px;border-top:2px solid #b5aa8d;border-radius:50%;transform:rotate(2deg)}
+  body[data-season="autumn"] .winter-garland i{width:18px;height:12px;margin-top:10px;border:0;border-radius:2px 90% 2px 90%;background:#a8ad8e;box-shadow:none;transform:rotate(32deg);animation:leafDrift 4s ease-in-out infinite alternate}
+  body[data-season="autumn"] .winter-garland i:nth-child(even){background:#c5aa78;transform:rotate(-28deg);animation-delay:.6s}body[data-season="autumn"] .winter-garland i:nth-child(3n){background:#b58d76;animation-delay:1s}body[data-season="autumn"] .winter-garland i:nth-child(3n + 1){background:#8fa18b}
+  body[data-season="autumn"] .winter-garland i::after{display:none}
+  @keyframes leafDrift{to{transform:translateY(3px) rotate(48deg)}}
+  body[data-season="autumn"] .winter-sparkles{font-size:0}body[data-season="autumn"] .winter-sparkles::before{content:"❧　✧　❦　✧　❧";font-size:17px;color:#a9a88f}
+  body[data-season="autumn"] .winter-borders{background:repeating-linear-gradient(135deg,#e2e1d7 0 8px,#fdfdfa 8px 16px);border-color:#e4e1d5}
+  body[data-season="autumn"] section.card{border-color:#e6e3d9;border-top-color:#d4d5c8;background:linear-gradient(145deg,#fff 70%,#faf9f4)}body[data-season="autumn"] section.card::before{content:"❧　✧";color:#c6c8b9}
+  body[data-season="autumn"] .status-line{background:#f1f5f0;color:#536c58;border-color:#dce6d9}body[data-season="autumn"] .status-line.warn{background:#f3f4ef;color:#69705e;border-color:#e1e3d8}body[data-season="autumn"] .status-line .dot{background:#91a08e}
+  body[data-season="autumn"] .btn-primary{background:#778671;box-shadow:0 8px 20px -10px rgba(111,129,107,.4)}body[data-season="autumn"] .btn-primary:hover{background:#66765f;box-shadow:0 12px 26px -12px rgba(111,129,107,.58)}
+  body[data-season="autumn"] .stepnav a.active{background:#eef1e9;color:#64735f}body[data-season="autumn"] .fmt.active{border-color:#a8b19c;background:#f3f5ef}body[data-season="autumn"] .fmt:hover{border-color:#c3c7b7;box-shadow:0 9px 22px -14px rgba(99,112,89,.28)}body[data-season="autumn"] .seq .copy:hover{border-color:#c3c7b7;background:#f2f4ee;color:#62715e}
+  @media(prefers-reduced-motion:reduce){body[data-season="spring"] .winter-garland i,body[data-season="autumn"] .winter-garland i{animation:none}}
+  .season-art{position:absolute;z-index:0;right:max(4vw,calc((100vw - 960px)/2));top:72px;width:clamp(160px,25vw,280px);height:auto;opacity:.94;pointer-events:none;filter:drop-shadow(0 10px 18px rgba(50,70,60,.09))}
+  .season-art--spring,.season-art--summer,.season-art--autumn{display:none}
+  body[data-season="spring"] .season-art--spring,body[data-season="summer"] .season-art--summer,body[data-season="autumn"] .season-art--autumn{display:block}
+  body[data-season="spring"] .winter-garland,body[data-season="autumn"] .winter-garland{display:none}
+  body[data-season="spring"] .winter-sparkles::before{content:"✿　❀　✿"}
+  body[data-season="summer"] .winter-borders{background:repeating-linear-gradient(180deg,#a7d8d5 0 3px,#f6c86e 3px 5px,#e1f3ee 5px 10px)}
+  body[data-season="autumn"]{background:#f3e7d4}
+  body[data-season="autumn"] header.hero{background:radial-gradient(ellipse at 15% 0%,rgba(198,148,101,.2),transparent 52%),radial-gradient(ellipse at 85% 35%,rgba(159,105,71,.15),transparent 36%),linear-gradient(180deg,#fffaf1,#f4e8d5);border-color:#e6d2b8}
+  body[data-season="autumn"] header.hero::after{content:""}
+  body[data-season="autumn"] .winter-sparkles::before{content:"☕　·　❧　·　☕";color:#9b674b;font-size:17px;letter-spacing:.22em}
+  body[data-season="autumn"] .winter-borders{background:repeating-linear-gradient(135deg,#d1a47c 0 8px,#f5e7d2 8px 16px);border-color:#e2c7a7}
+  body[data-season="autumn"] section.card{background:linear-gradient(145deg,#fffaf1 0%,#f8eddb 100%);border-color:#e3d0b7;border-top-color:#b9825c;box-shadow:0 14px 34px -24px rgba(98,61,40,.4)}
+  body[data-season="autumn"] section.card::before{content:"❧　☕";color:#b37e5a}
+  body[data-season="autumn"] .btn-primary{background:linear-gradient(145deg,#80533e,#624031);box-shadow:0 8px 20px -10px rgba(98,64,49,.55)}body[data-season="autumn"] .btn-primary:hover{background:#503426;box-shadow:0 12px 26px -12px rgba(98,64,49,.65)}
+  body[data-season="autumn"] .stepnav a.active{background:#eee0cc;color:#704c37}body[data-season="autumn"] .fmt.active{border-color:#b88c67;background:#fbf1e3}body[data-season="autumn"] .fmt:hover{border-color:#cfac89;box-shadow:0 9px 22px -14px rgba(118,79,53,.35)}body[data-season="autumn"] .seq .copy:hover{border-color:#c69c77;background:#fbf1e3;color:#755039}
+  body[data-season="autumn"] .stat .value{color:#694733}body[data-season="autumn"] .seq{background:#f4e8d7;border-color:#e6d1b7}body[data-season="autumn"] .seq .side-label{color:#8d6248}body[data-season="autumn"] .seq code{color:#4f4034}
+  body[data-season="spring"] button.btn::after,body[data-season="spring"] .fmt::after,body[data-season="spring"] .seq .copy::after{content:"✿"}
+  body[data-season="summer"] button.btn::after,body[data-season="summer"] .fmt::after,body[data-season="summer"] .seq .copy::after{content:"☼"}
+  body[data-season="autumn"] button.btn::after,body[data-season="autumn"] .fmt::after,body[data-season="autumn"] .seq .copy::after{content:"❧"}
+  body[data-season="spring"] section.card>h2::after{content:"✿"}body[data-season="summer"] section.card>h2::after{content:"☼"}body[data-season="autumn"] section.card>h2::after{content:"❧"}
+  @media(max-width:640px){.season-art{width:120px;right:6px;top:90px;opacity:.25}body[data-season="summer"] .season-art,body[data-season="spring"] .season-art,body[data-season="autumn"] .season-art{opacity:.42}}
+  /* Non-winter themes get their own hover motif; snow stays in winter only. */
+  body[data-season="spring"] .winter-garland{display:none}
+  body[data-season="spring"] .winter-sparkles::before{content:"✿　❀　✿";color:#b8879b}
+  body[data-season="spring"] .winter-borders{background:repeating-linear-gradient(135deg,#dcebd5 0 8px,#fffaf6 8px 16px)}
+  body[data-season="spring"] button.btn::after,body[data-season="spring"] .fmt::after,body[data-season="spring"] .seq .copy::after{content:"✿"}
+  body[data-season="summer"] button.btn::after,body[data-season="summer"] .fmt::after,body[data-season="summer"] .seq .copy::after{content:"☼"}
+  body[data-season="autumn"] button.btn::after,body[data-season="autumn"] .fmt::after,body[data-season="autumn"] .seq .copy::after{content:"❧"}
+  body[data-season="spring"] section.card>h2::after{content:"✿"}body[data-season="summer"] section.card>h2::after{content:"☼"}body[data-season="autumn"] section.card>h2::after{content:"❧"}
+  body[data-season="summer"]{background:#eaf7f5}
+  body[data-season="summer"] header.hero{background:radial-gradient(circle at 84% 22%,rgba(255,220,134,.62) 0 7%,transparent 7.5%),radial-gradient(ellipse at 84% 24%,rgba(255,222,146,.25),transparent 26%),linear-gradient(160deg,#fff 0%,#eaf8f6 70%,#d9efec 100%)}
+  body[data-season="summer"] header.hero::after{display:none}
+  body[data-season="summer"] .season-art--summer{width:clamp(210px,30vw,330px);top:105px;opacity:1;filter:drop-shadow(0 14px 20px rgba(39,117,123,.19))}
+  body[data-season="summer"] .winter-sparkles::before{content:"☼　·　〰　·　☼";font-size:19px;letter-spacing:.38em;color:#398f94}
+  body[data-season="summer"] .btn-primary{background:linear-gradient(145deg,#319ca3,#23747e);box-shadow:0 9px 23px -10px rgba(34,125,132,.58)}body[data-season="summer"] .btn-primary:hover{background:#1d6973;box-shadow:0 12px 26px -12px rgba(34,125,132,.7)}
+  body[data-season="summer"] section.card{background:linear-gradient(145deg,#fff 55%,#eaf7f3);border-color:#cae4e0;border-top-color:#65b2ae}
+  body[data-season="summer"] .seq{background:#e9f5f2;border-color:#cee4df}body[data-season="summer"] .seq .copy{border-color:#bfdcd8}body[data-season="summer"] .seq .copy:hover{background:#e0f1ed;color:#28777d}
+  body[data-season="autumn"]{background:radial-gradient(ellipse at 15% 8%,#e8cfad,transparent 38%),linear-gradient(145deg,#efe0c9,#fbf4e8 58%,#ead6ba)}
+  body[data-season="autumn"] header.hero{background:radial-gradient(ellipse at 12% 4%,rgba(169,111,71,.2),transparent 48%),radial-gradient(ellipse at 90% 35%,rgba(121,76,51,.15),transparent 35%),linear-gradient(180deg,#fff9ef,#f1dfc7);border-color:#ddc3a4}
+  body[data-season="autumn"] header.hero::after{display:none}
+  body[data-season="autumn"] .season-art--autumn{width:clamp(200px,28vw,300px);top:98px;opacity:1;filter:drop-shadow(0 15px 20px rgba(84,48,31,.24))}
+  body[data-season="autumn"] .winter-sparkles::before{content:"☕　·　❧　·　☕";font-size:17px;letter-spacing:.22em;color:#8a5539}
+  body[data-season="autumn"] .winter-borders{background:repeating-linear-gradient(135deg,#c99065 0 8px,#f1dfc6 8px 16px);border-color:#dfc3a2}
+  body[data-season="autumn"] section.card{background:linear-gradient(145deg,#fff9ef 0%,#f5e7d3 100%);border-color:#dfc8aa;border-top-color:#b77b52;box-shadow:0 14px 34px -24px rgba(98,61,40,.4)}body[data-season="autumn"] section.card::before{content:"❧　☕";color:#b37e5a}
+  body[data-season="autumn"] .btn-primary{background:linear-gradient(145deg,#80533e,#5e3c2e);box-shadow:0 8px 20px -10px rgba(87,55,38,.48)}body[data-season="autumn"] .btn-primary:hover{background:#4e3227;box-shadow:0 12px 26px -12px rgba(87,55,38,.65)}
+  body[data-season="autumn"] .seq{background:#f1e2ce;border-color:#e0c6a6}body[data-season="autumn"] .seq code{color:#4f4034}body[data-season="autumn"] .seq .side-label{color:#8b5b3e}body[data-season="autumn"] .seq .copy{background:#fff8ed;border-color:#d9bea0;color:#765039}body[data-season="autumn"] .seq .copy:hover{background:#efe0cb;border-color:#bc8d67;color:#633f2b}
+  body[data-season="autumn"] .stat{background:#fff8ec;border-color:#e2cfb4}body[data-season="autumn"] .stat .value{color:#694733}body[data-season="autumn"] .fmt.active{border-color:#bd8c65;background:#fbefdf}body[data-season="autumn"] .fmt:hover{border-color:#d0a77f}
+  @media(max-width:640px){body[data-season="summer"] .season-art--summer,body[data-season="autumn"] .season-art--autumn{opacity:.36}}
+  /* Complete seasonal palettes for controls and diagrams, not only the hero. */
+  body[data-season="spring"]{--thread:#6f8c5c;--thread-dark:#4e6d4b;--brass:#ad7890;--green:#79a276;--ink:#f5f6ed;--paper-2:#edf2e6;--paper-3:#dce5d2;--text-light:#59654f;--muted-dark:#6e7963;--muted:#7d8872}
+  body[data-season="spring"] .stepnav a{color:#69795f}body[data-season="spring"] .stepnav a:hover,body[data-season="spring"] .stepnav a.active{color:#4e6d4b}body[data-season="spring"] .stepnav a.active{background:#e8efdf}
+  body[data-season="spring"] .eyebrow,body[data-season="spring"] .pdf-hint,body[data-season="spring"] .seq .side-label{color:#6c855d}
+  body[data-season="spring"] .sub,body[data-season="spring"] .diagram .legend,body[data-season="spring"] .fmt .desc,body[data-season="spring"] footer{color:#6d795f}body[data-season="spring"] .diagram .legend b,body[data-season="spring"] section.card h2{color:#40583b}
+  body[data-season="spring"] .stat .value,body[data-season="spring"] .fmt.active .title{color:#4e6d4b}
+  body[data-season="spring"] .stepper,body[data-season="spring"] .fmt,body[data-season="spring"] .stat,body[data-season="spring"] .brosh-block{background:#f8f9f1;border-color:#dce5d2}
+  body[data-season="spring"] .brosh-block h3 span.tag{color:#637a54;border-color:#c6d5b8}body[data-season="spring"] table.sheet-table th{color:#68795e;border-bottom-color:#dce5d2}body[data-season="spring"] table.sheet-table td{border-bottom-color:#e4eadc}body[data-season="spring"] table.sheet-table tr:hover td{background:#f0f4e9}
+  body[data-season="spring"] .stepper:focus-within{border-color:#88a77a;box-shadow:0 0 0 4px rgba(122,158,106,.16)}body[data-season="spring"] .stepper button{color:#56784f}body[data-season="spring"] .stepper button:hover{background:#eaf1e4}
+  body[data-season="spring"] :focus-visible{outline-color:#88a77a}
+  body[data-season="spring"] .status-line{background:#edf5e8;color:#4e6d4b;border-color:#d4e3ca}body[data-season="spring"] .status-line.warn{background:#f8f1df;color:#80633e;border-color:#ebddba}body[data-season="spring"] .status-line .dot{background:#79a276}
+  body[data-season="spring"] .diagram svg{filter:sepia(.3) saturate(.85) hue-rotate(30deg)}body[data-season="spring"] .acc-icon::before,body[data-season="spring"] .acc-icon::after{background:#7b9a6a}
+  body[data-season="spring"] .seq .copy{border-color:#cddbc4;color:#56724e}body[data-season="spring"] .seq .copy:hover{background:#edf4e7;border-color:#a9c19a;color:#456541}
+
+  body[data-season="autumn"]{--thread:#89583e;--thread-dark:#62412e;--brass:#a66c48;--green:#71805b;--ink:#f4e8d6;--paper-2:#efe0ca;--paper-3:#dfc8aa;--text-light:#5b4638;--muted-dark:#786451;--muted:#87715d}
+  body[data-season="autumn"] .stepnav{background:rgba(255,248,237,.94);border-bottom-color:#e4cfb3;box-shadow:0 5px 20px rgba(91,57,37,.09)}
+  body[data-season="autumn"] .stepnav a{color:#80644d}body[data-season="autumn"] .stepnav a:hover,body[data-season="autumn"] .stepnav a.active{color:#65422f}body[data-season="autumn"] .stepnav a.active{background:#efdfc9}
+  body[data-season="autumn"] h1 em,body[data-season="autumn"] .eyebrow,body[data-season="autumn"] .pdf-hint{color:#8d5d40}
+  body[data-season="autumn"] .stepper:focus-within{border-color:#b7835f;box-shadow:0 0 0 4px rgba(176,124,84,.17)}body[data-season="autumn"] .stepper button{color:#765039}body[data-season="autumn"] .stepper button:hover{background:#f1e2ce}
+  body[data-season="autumn"] .stat .value,body[data-season="autumn"] .fmt.active .title{color:#694733}
+  body[data-season="autumn"] .stepper,body[data-season="autumn"] .fmt,body[data-season="autumn"] .stat,body[data-season="autumn"] .brosh-block{background:#fcf5e9;border-color:#e2cfb4}
+  body[data-season="autumn"] .brosh-block h3 span.tag{color:#8c5c3e;border-color:#d3b18f}body[data-season="autumn"] table.sheet-table th{color:#80634c;border-bottom-color:#e2cfb4}body[data-season="autumn"] table.sheet-table td{border-bottom-color:#e9dac5}body[data-season="autumn"] table.sheet-table tr:hover td{background:#f7ecdc}
+  body[data-season="autumn"] .status-line{background:#edf0e5;color:#586344;border-color:#d8ddc8}body[data-season="autumn"] .status-line.warn{background:#f5e6d2;color:#845538;border-color:#e5c9a8}body[data-season="autumn"] .status-line .dot{background:#87916d}
+  body[data-season="autumn"] .diagram svg{filter:sepia(.72) saturate(.8) hue-rotate(332deg) brightness(.96)}body[data-season="autumn"] .acc-icon::before,body[data-season="autumn"] .acc-icon::after{background:#9a6a46}
+  body[data-season="autumn"] .acc-item{border-top-color:#e1cdb1}body[data-season="autumn"] .acc-trigger{color:#60432f}body[data-season="autumn"] .acc-panel p,body[data-season="autumn"] .acc-panel ul{color:#786451}
+  body[data-season="autumn"] .seq .copy:focus-visible{outline-color:#aa7852}
+  @media print{body[data-season]{background:#fff}body[data-season] header.hero::after{display:none}}
+
+  /* Spring: an illustrated blossom branch, petal palette and soft garden cards. */
+  body[data-season="spring"]{background:linear-gradient(155deg,#f0f7ed,#fbfcf6 55%,#edf4e8)}
+  body[data-season="spring"] header.hero{background:radial-gradient(ellipse at 12% 0%,rgba(190,220,174,.48),transparent 44%),radial-gradient(ellipse at 90% 14%,rgba(231,198,212,.36),transparent 30%),linear-gradient(180deg,#fff 0%,#f1f7ec 100%);border-color:#dce8d5}
+  body[data-season="spring"] header.hero::after{content:"✿";color:rgba(169,125,147,.17);font-size:clamp(185px,27vw,320px);right:max(5vw,calc((100vw - 960px)/2));top:45px;transform:rotate(-18deg)}
+  body[data-season="spring"] .winter-garland{height:38px;border:0;border-radius:0;filter:none}
+  body[data-season="spring"] .winter-garland::before{content:"";position:absolute;left:5%;right:5%;top:20px;height:14px;border-top:2px solid #9eb899;border-radius:50%;transform:rotate(-2deg)}
+  body[data-season="spring"] .winter-garland i{width:14px;height:14px;margin-top:10px;border:2px solid #fff;border-radius:50%;background:#e7bfd0;box-shadow:0 0 0 3px #f8ebf0,0 3px 8px rgba(91,133,103,.14);animation:blossomSway 3.2s ease-in-out infinite alternate}
+  body[data-season="spring"] .winter-garland i:nth-child(3n){background:#f1dca5;box-shadow:0 0 0 3px #fbf4e4,0 3px 8px rgba(91,133,103,.14)}body[data-season="spring"] .winter-garland i:nth-child(3n + 1){background:#c7ddbd;box-shadow:0 0 0 3px #edf5e9,0 3px 8px rgba(91,133,103,.14)}body[data-season="spring"] .winter-garland i:nth-child(even){background:#d6c9e8;box-shadow:0 0 0 3px #f1edf7,0 3px 8px rgba(91,133,103,.14)}
+  body[data-season="spring"] .winter-garland i::after{display:none}
+  body[data-season="spring"] .winter-sparkles{font-size:0}body[data-season="spring"] .winter-sparkles::before{content:"✿　❀　✿　❀　✿";font-size:18px;color:#bb8ea3;letter-spacing:.3em}
+  body[data-season="spring"] .winter-borders{height:8px;background:repeating-linear-gradient(135deg,#dbe9d4 0 8px,#fffaf7 8px 16px);border-color:#dce8d5}
+  body[data-season="spring"] section.card{border-color:#dfe9d9;border-top-color:#c2d6bb;background:linear-gradient(145deg,#fff 66%,#f5f8ef)}body[data-season="spring"] section.card::before{content:"✿　❀";color:#d0acbb}
+  body[data-season="spring"] .btn-primary{background:#688d65;box-shadow:0 8px 20px -10px rgba(89,130,82,.42)}body[data-season="spring"] .btn-primary:hover{background:#55794f;box-shadow:0 12px 26px -12px rgba(89,130,82,.58)}
+  body[data-season="spring"] .stepnav a.active{background:#e9f1e4;color:#55744e}body[data-season="spring"] .fmt.active{border-color:#9dbb92;background:#f2f7ed}body[data-season="spring"] .fmt:hover{border-color:#c4d8b8;box-shadow:0 9px 22px -14px rgba(78,119,70,.3)}body[data-season="spring"] .seq .copy:hover{border-color:#bdd0b2;background:#f2f7ed;color:#55744e}
+
+  /* Summer: sun-drenched coast, lagoon controls and layered wave borders. */
+  body[data-season="summer"]{background:#eef8f7}
+  body[data-season="summer"] header.hero{background:radial-gradient(circle at 82% 20%,rgba(255,220,134,.58) 0 7%,transparent 7.5%),radial-gradient(ellipse at 82% 22%,rgba(255,220,134,.24),transparent 25%),linear-gradient(160deg,#fff 0%,#edfaf8 70%,#e2f3f0 100%);border-color:#d5e9e5}
+  body[data-season="summer"] header.hero::after{content:"☼";color:rgba(201,158,62,.2);font-size:clamp(210px,30vw,350px);right:max(5vw,calc((100vw - 960px)/2));top:10px;transform:rotate(-10deg)}
+  body[data-season="summer"] .winter-garland{display:none}
+  body[data-season="summer"] .winter-sparkles{font-size:0}
+  body[data-season="summer"] .winter-sparkles::before{content:"☼　·　〰　·　☼";font-size:19px;letter-spacing:.38em;color:#55a6a7;text-shadow:0 0 12px rgba(115,190,196,.3)}
+  body[data-season="summer"] .winter-borders{height:12px;background:repeating-linear-gradient(180deg,#a9d6d2 0 2px,#d7efeb 2px 5px,#fbfdf8 5px 8px,#bcdfe0 8px 10px,#f8fcf8 10px 12px);border-color:#cee4e1}
+  body[data-season="summer"] section.card{border-color:#d5e8e5;border-top-color:#88c1bd;background:linear-gradient(145deg,#fff 62%,#f0faf7)}body[data-season="summer"] section.card::before{content:"☼　✦";color:#9ccbc5}
+  body[data-season="summer"] .btn-primary{background:#429da3;box-shadow:0 8px 20px -10px rgba(56,145,153,.44)}body[data-season="summer"] .btn-primary:hover{background:#327f88;box-shadow:0 12px 26px -12px rgba(56,145,153,.6)}
+  body[data-season="summer"] .stepnav a.active{background:#e1f1ef;color:#34777b}body[data-season="summer"] .fmt.active{border-color:#82beb9;background:#eff8f5}body[data-season="summer"] .fmt:hover{border-color:#a6d0cc;box-shadow:0 9px 22px -14px rgba(56,132,139,.3)}body[data-season="summer"] .seq .copy:hover{border-color:#a6d0cc;background:#eff8f5;color:#34777b}
+
+  /* Autumn: herbarium leaves, parchment paper and quiet woodland greens. */
+  body[data-season="autumn"]{background:#f4f1e8}
+  body[data-season="autumn"] header.hero{background:radial-gradient(ellipse at 15% 0%,rgba(205,197,170,.46),transparent 43%),radial-gradient(ellipse at 88% 12%,rgba(188,198,174,.38),transparent 32%),linear-gradient(180deg,#fffefa 0%,#f5f2e8 100%);border-color:#e4dece}
+  body[data-season="autumn"] header.hero::after{content:"❧";color:rgba(125,135,105,.2);font-size:clamp(190px,27vw,325px);right:max(4vw,calc((100vw - 960px)/2));top:42px;transform:rotate(-23deg)}
+  body[data-season="autumn"] .winter-garland{height:40px;border:0;border-radius:0;filter:none}
+  body[data-season="autumn"] .winter-garland::before{content:"";position:absolute;left:6%;right:6%;top:20px;height:15px;border-top:2px solid #aaa88c;border-radius:50%;transform:rotate(2deg)}
+  body[data-season="autumn"] .winter-garland i{width:19px;height:12px;margin-top:9px;border:0;border-radius:2px 90% 2px 90%;background:#9aa184;box-shadow:none;transform:rotate(32deg);animation:herbariumDrift 4.5s ease-in-out infinite alternate}
+  body[data-season="autumn"] .winter-garland i:nth-child(even){background:#b7a27e;transform:rotate(-28deg);animation-delay:.7s}body[data-season="autumn"] .winter-garland i:nth-child(3n){background:#a98576;animation-delay:1.1s}body[data-season="autumn"] .winter-garland i:nth-child(3n + 1){background:#818f79}
+  body[data-season="autumn"] .winter-garland i::after{display:none}
+  @keyframes herbariumDrift{to{transform:translateY(4px) rotate(48deg)}}
+  body[data-season="autumn"] .winter-sparkles{font-size:0}body[data-season="autumn"] .winter-sparkles::before{content:"❧　✧　❦　✧　❧";font-size:17px;color:#898e74;letter-spacing:.26em}
+  body[data-season="autumn"] .winter-borders{height:8px;background:repeating-linear-gradient(135deg,#e3dfd1 0 8px,#fbfaf5 8px 16px);border-color:#e4dece}
+  body[data-season="autumn"] section.card{border-color:#e5e0d4;border-top-color:#c6c8b5;background:linear-gradient(145deg,#fffefa 65%,#f7f5ec)}body[data-season="autumn"] section.card::before{content:"❧　✧";color:#a6a68f}
+  body[data-season="autumn"] .btn-primary{background:#78836e;box-shadow:0 8px 20px -10px rgba(105,119,94,.42)}body[data-season="autumn"] .btn-primary:hover{background:#65725c;box-shadow:0 12px 26px -12px rgba(105,119,94,.6)}
+  body[data-season="autumn"] .stepnav a.active{background:#ecefe5;color:#66735d}body[data-season="autumn"] .fmt.active{border-color:#aab39d;background:#f4f5ef}body[data-season="autumn"] .fmt:hover{border-color:#c6c9b8;box-shadow:0 9px 22px -14px rgba(99,112,89,.3)}body[data-season="autumn"] .seq .copy:hover{border-color:#c6c9b8;background:#f4f5ef;color:#66735d}
+  @media(prefers-reduced-motion:reduce){body[data-season="spring"] .winter-garland i,body[data-season="autumn"] .winter-garland i{animation:none}}
+  @media print{body[data-season]{background:#fff}body[data-season] header.hero::after{display:none}}
+
+  /* Last-mile palette overrides: no winter blues in spring or autumn. */
+  body[data-season="spring"]{--thread:#6f8c5c;--thread-dark:#4e6d4b;--brass:#ad7890;--green:#79a276;--ink:#f5f6ed;--paper-2:#edf2e6;--paper-3:#dce5d2;--text-light:#59654f;--muted-dark:#6e7963;--muted:#7d8872}
+  body[data-season="spring"] .stepnav{background:rgba(249,250,242,.94);border-color:#dce5d2}body[data-season="spring"] .stepnav a{color:#69795f}body[data-season="spring"] .stepnav a.active{background:#e8efdf;color:#4e6d4b}
+  body[data-season="spring"] .eyebrow,body[data-season="spring"] .pdf-hint,body[data-season="spring"] .seq .side-label{color:#6c855d}
+  body[data-season="spring"] .stepper,body[data-season="spring"] .fmt,body[data-season="spring"] .stat,body[data-season="spring"] .brosh-block{background:#f8f9f1;border-color:#dce5d2}
+  body[data-season="spring"] .stat .value,body[data-season="spring"] .fmt.active .title{color:#4e6d4b}body[data-season="spring"] .brosh-block h3 span.tag{color:#637a54;border-color:#c6d5b8}
+  body[data-season="spring"] .stepper:focus-within{border-color:#88a77a;box-shadow:0 0 0 4px rgba(122,158,106,.16)}body[data-season="spring"] .stepper button{color:#56784f}body[data-season="spring"] .stepper button:hover{background:#eaf1e4}
+  body[data-season="spring"] .seq{background:#f1f3e9;border-color:#dce5d2}body[data-season="spring"] .seq code{color:#465540}body[data-season="spring"] .seq .copy{background:#fbfcf7;border-color:#cddbc4;color:#56724e}body[data-season="spring"] .seq .copy:hover{background:#edf4e7;border-color:#a9c19a;color:#456541}
+  body[data-season="spring"] table.sheet-table th{color:#68795e;border-color:#dce5d2}body[data-season="spring"] table.sheet-table td{border-color:#e4eadc}body[data-season="spring"] table.sheet-table tr:hover td{background:#f0f4e9}
+  body[data-season="spring"] .status-line{background:#edf5e8;color:#4e6d4b;border-color:#d4e3ca}body[data-season="spring"] .status-line.warn{background:#f8f1df;color:#80633e;border-color:#ebddba}body[data-season="spring"] .status-line .dot{background:#79a276}
+  body[data-season="spring"] .diagram svg{filter:sepia(.3) saturate(.85) hue-rotate(30deg)}body[data-season="spring"] .acc-icon::before,body[data-season="spring"] .acc-icon::after{background:#7b9a6a}
+  body[data-season="spring"] :focus-visible{outline-color:#88a77a}body[data-season="spring"] .btn-primary{background:#688d65;box-shadow:0 8px 20px -10px rgba(89,130,82,.42)}body[data-season="spring"] .btn-primary:hover{background:#55794f;box-shadow:0 12px 26px -12px rgba(89,130,82,.58)}
+
+  body[data-season="autumn"]{--thread:#89583e;--thread-dark:#62412e;--brass:#a66c48;--green:#71805b;--ink:#f4e8d6;--paper-2:#efe0ca;--paper-3:#dfc8aa;--text-light:#5b4638;--muted-dark:#786451;--muted:#87715d}
+  body[data-season="autumn"] .stepnav{background:rgba(255,248,237,.95);border-bottom-color:#e4cfb3;box-shadow:0 5px 20px rgba(91,57,37,.09)}body[data-season="autumn"] .stepnav a{color:#80644d}body[data-season="autumn"] .stepnav a.active{background:#efdfc9;color:#65422f}
+  body[data-season="autumn"] .eyebrow,body[data-season="autumn"] .pdf-hint,body[data-season="autumn"] h1 em{color:#8d5d40}
+  body[data-season="autumn"] .sub,body[data-season="autumn"] .diagram .legend,body[data-season="autumn"] .fmt .desc,body[data-season="autumn"] footer{color:#80664f}body[data-season="autumn"] .diagram .legend b,body[data-season="autumn"] section.card h2{color:#513a2c}
+  body[data-season="autumn"] .stepper,body[data-season="autumn"] .fmt,body[data-season="autumn"] .stat,body[data-season="autumn"] .brosh-block{background:#fcf5e9;border-color:#e2cfb4}
+  body[data-season="autumn"] .stat .value,body[data-season="autumn"] .fmt.active .title{color:#694733}body[data-season="autumn"] .brosh-block h3 span.tag{color:#8c5c3e;border-color:#d3b18f}
+  body[data-season="autumn"] .stepper:focus-within{border-color:#b7835f;box-shadow:0 0 0 4px rgba(176,124,84,.17)}body[data-season="autumn"] .stepper button{color:#765039}body[data-season="autumn"] .stepper button:hover{background:#f1e2ce}
+  body[data-season="autumn"] .seq{background:#f1e2ce;border-color:#e0c6a6}body[data-season="autumn"] .seq code{color:#4f4034}body[data-season="autumn"] .seq .side-label{color:#8b5b3e}body[data-season="autumn"] .seq .copy{background:#fff8ed;border-color:#d9bea0;color:#765039}body[data-season="autumn"] .seq .copy:hover{background:#efe0cb;border-color:#bc8d67;color:#633f2b}
+  body[data-season="autumn"] table.sheet-table th{color:#80634c;border-bottom-color:#e2cfb4}body[data-season="autumn"] table.sheet-table td{border-bottom-color:#e9dac5}body[data-season="autumn"] table.sheet-table tr:hover td{background:#f7ecdc}
+  body[data-season="autumn"] .status-line{background:#edf0e5;color:#586344;border-color:#d8ddc8}body[data-season="autumn"] .status-line.warn{background:#f5e6d2;color:#845538;border-color:#e5c9a8}body[data-season="autumn"] .status-line .dot{background:#87916d}
+  body[data-season="autumn"] .diagram svg{filter:sepia(.72) saturate(.8) hue-rotate(332deg) brightness(.96)}body[data-season="autumn"] .acc-icon::before,body[data-season="autumn"] .acc-icon::after{background:#9a6a46}
+  body[data-season="autumn"] .acc-item{border-top-color:#e1cdb1}body[data-season="autumn"] .acc-trigger{color:#60432f}body[data-season="autumn"] .acc-panel p,body[data-season="autumn"] .acc-panel ul{color:#786451}
+  body[data-season="autumn"] :focus-visible{outline-color:#ad7952}body[data-season="autumn"] .btn-primary{background:linear-gradient(145deg,#80533e,#5e3c2e);box-shadow:0 8px 20px -10px rgba(87,55,38,.48)}body[data-season="autumn"] .btn-primary:hover{background:#4e3227;box-shadow:0 12px 26px -12px rgba(87,55,38,.65)}
+  button.btn::before,button.btn::after{content:none!important;display:none!important}
+  button.btn:hover,.btn:focus-visible,.fmt:hover{transform:none!important;filter:none!important;animation:none!important}
+  button.btn{transition:none!important}
+  @media print{body[data-season="spring"],body[data-season="autumn"]{background:#fff}}
+
+
+  /* Keep all controls stable under the pointer; no hover transforms or pseudo-icons. */
+  button,button::before,button::after,.fmt,.fmt::after,.seq .copy,.seq .copy::after{transition:none!important;animation:none!important;transform:none!important;filter:none!important}
+  button:hover,button:focus-visible,button:active,.fmt:hover,.fmt:focus-within,.seq .copy:hover{opacity:1!important;visibility:visible!important;transform:none!important;filter:none!important;animation:none!important;box-shadow:none!important}
+  button::before,button::after{content:none!important;display:none!important}
+  .fmt::after,.seq .copy::after,section.card>h2::after{content:none!important;display:none!important;transition:none!important;animation:none!important}
+  /* Autumn stays in espresso, cinnamon, and oat tones, including status states. */
+  body[data-season="autumn"]{--green:#a56d47}
+  body[data-season="autumn"] section.card h2 .num{background:#f1dfc9;border-color:#dfc3a3;color:#795036}
+  body[data-season="autumn"] .status-line{background:#f2e4d1;color:#765038;border-color:#e2c9a9}
+  body[data-season="autumn"] .status-line.warn{background:#f7e4d3;color:#87513a;border-color:#e8c6a5}
+  body[data-season="autumn"] .status-line .dot,body[data-season="autumn"] .status-line.warn .dot{background:#ad7650}
+  body[data-season="autumn"] .stepper,body[data-season="autumn"] .fmt,body[data-season="autumn"] .stat,body[data-season="autumn"] .brosh-block{background:#fcf4e7;border-color:#e4ceb0}
+  body[data-season="autumn"] .stat .value,body[data-season="autumn"] .fmt.active .title{color:#68442f}
+  body[data-season="autumn"] .fmt.active{border-color:#bd8d66;background:#f8ead6}
+  body[data-season="autumn"] .fmt:hover{border-color:#c59a73;background:#fbf0df}
+  body[data-season="autumn"] .stepper:focus-within{border-color:#b7835f;box-shadow:0 0 0 4px rgba(176,124,84,.14)}body[data-season="autumn"] .stepper button{color:#765039}
+  body[data-season="autumn"] .brosh-block h3 span.tag{color:#8c5c3e;border-color:#d3b18f}
+  body[data-season="autumn"] .seq{background:#f1e2ce;border-color:#e0c6a6}body[data-season="autumn"] .seq code{color:#4f4034}body[data-season="autumn"] .seq .side-label{color:#8b5b3e}
+  body[data-season="autumn"] table.sheet-table th{color:#80634c;border-color:#e2cfb4}body[data-season="autumn"] table.sheet-table td{border-color:#e9dac5}body[data-season="autumn"] table.sheet-table tr:hover td{background:#f7ecdc}
+  body[data-season="autumn"] .diagram .legend,body[data-season="autumn"] .sub,body[data-season="autumn"] .fmt .desc{color:#80664f}
+  body[data-season="autumn"] .diagram .legend b,body[data-season="autumn"] section.card h2{color:#513a2c}
+
+  .seasonal-signoff::before{content:"❄　✦　❄　✧　❄"}
+  body[data-season="spring"] .seasonal-signoff::before{content:"✿　❀　✿　❀　✿"}
+  body[data-season="summer"] .seasonal-signoff::before{content:"☼　·　〰　·　☼"}
+  body[data-season="autumn"] .seasonal-signoff::before{content:"☕　·　❧　·　☕"}
+
+  .home-link{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid #cddff0;border-radius:10px;background:rgba(255,255,255,.9);color:#456d8c;text-decoration:none;font-size:13px;font-weight:650;box-shadow:0 4px 12px rgba(49,79,105,.08)}
+  .home-link:hover{background:#fff;border-color:#9ebcda;color:#315b7e}
+  .stepnav .home-link{margin-left:auto;white-space:nowrap}
+  .stepnav{transform:none!important;opacity:1!important;pointer-events:auto!important}
+  .stepnav-inner{overflow-x:auto}
+  .stepnav-inner>a{white-space:nowrap}
+  body[data-season="spring"] .home-link{background:#f0f4e8;border-color:#d5e2cb;color:#58714d;box-shadow:none}
+  body[data-season="summer"] .home-link{background:#e7f5f1;border-color:#cce5df;color:#34777b;box-shadow:none}
+  body[data-season="autumn"] .home-link{background:#f6ead9;border-color:#e1c8aa;color:#70482f;box-shadow:none}
+  @media(max-width:640px){.stepnav .home-link{padding:6px 8px;font-size:11px}}
+
+  /* Match the PDF editor's warm cafe palette across the entire autumn calculator. */
+  body[data-season="autumn"]{--bg:#f3e8d8;--thread:#80533e;--thread-dark:#5e3c2e;--brass:#a66c48;--green:#a56d47;--ink:#f1e3cf;--paper-2:#f5e8d5;--paper-3:#dfc3a3;--text-dark:#563a2b;--text-light:#6b503e;--muted-dark:#826b56;--muted:#8b725e;background-color:#f3e8d8;background-image:radial-gradient(ellipse at 20% 0%,#e9d2b7,transparent 38%),linear-gradient(145deg,#f1e3cf,#fbf5eb 58%,#ead7bd)}
+  body[data-season="autumn"] .stepnav{background:rgba(255,249,239,.92);border-color:#e0c8aa;box-shadow:0 5px 22px rgba(93,57,36,.1)}
+  body[data-season="autumn"] .stepnav a{color:#76543e}body[data-season="autumn"] .stepnav a.active{background:#efdfc9;color:#65422f}
+  body[data-season="autumn"] header.hero{background:radial-gradient(ellipse at 20% 0%,#e9d2b7,transparent 38%),linear-gradient(145deg,#f1e3cf,#fbf5eb 58%,#ead7bd);border-color:#e0c8aa}
+  body[data-season="autumn"] .eyebrow,body[data-season="autumn"] h1 em,body[data-season="autumn"] .pdf-hint{color:#8d5d40}
+  body[data-season="autumn"] .lede,body[data-season="autumn"] .sub,body[data-season="autumn"] .diagram .legend,body[data-season="autumn"] .fmt .desc{color:#826b56}
+  body[data-season="autumn"] .diagram .legend b,body[data-season="autumn"] section.card h2{color:#563a2b}
+  body[data-season="autumn"] section.card{background:linear-gradient(145deg,#fff9ef,#f5e8d5);border-color:#d9bea0;border-top-color:#b9825c;box-shadow:0 18px 42px rgba(92,59,39,.09)}
+  body[data-season="autumn"] section.card h2 .num{background:#f1dfc9;border-color:#dfc3a3;color:#795036}
+  body[data-season="autumn"] .stepper,body[data-season="autumn"] .fmt,body[data-season="autumn"] .stat,body[data-season="autumn"] .brosh-block{background:#fff9ef;border-color:#e4cfb5}
+  body[data-season="autumn"] .stepper:focus-within{border-color:#b7835f;box-shadow:0 0 0 4px rgba(176,124,84,.14)}body[data-season="autumn"] .stepper button{color:#765039}body[data-season="autumn"] .stepper button:hover{background:#f5e8d5}
+  body[data-season="autumn"] .fmt.active{border-color:#bd8d66;background:#f8ead6}body[data-season="autumn"] .fmt.active .title,body[data-season="autumn"] .stat .value{color:#68442f}
+  body[data-season="autumn"] .fmt:hover{border-color:#c59a73;background:#fbf0df}
+  body[data-season="autumn"] .seq{background:#f5e8d5;border-color:#e0c6a6}body[data-season="autumn"] .seq code{color:#4f4034}body[data-season="autumn"] .seq .side-label{color:#8b5b3e}body[data-season="autumn"] .seq .copy{background:#fff9ef;border-color:#d9bea0;color:#765039}
+  body[data-season="autumn"] .status-line{background:#f2e4d1;color:#765038;border-color:#e2c9a9}body[data-season="autumn"] .status-line.warn{background:#f7e4d3;color:#87513a;border-color:#e8c6a5}body[data-season="autumn"] .status-line .dot{background:#ad7650}
+  body[data-season="autumn"] table.sheet-table th{color:#80634c;border-color:#e2cfb4}body[data-season="autumn"] table.sheet-table td{border-color:#e9dac5}body[data-season="autumn"] table.sheet-table tr:hover td{background:#f7ecdc}
+  body[data-season="autumn"] .brosh-block h3 span.tag{color:#8c5c3e;border-color:#d3b18f}body[data-season="autumn"] .acc-item{border-color:#e1cdb1}body[data-season="autumn"] .acc-trigger{color:#60432f}body[data-season="autumn"] .acc-panel p,body[data-season="autumn"] .acc-panel ul{color:#786451}
+  body[data-season="autumn"] .btn-primary{background:linear-gradient(145deg,#80533e,#5e3c2e);box-shadow:0 8px 20px -10px rgba(87,55,38,.48)}
+  body[data-season="autumn"] .btn-ghost{background:#fff9ef;color:#60432f;border-color:#dfc3a3}
+  body[data-season="autumn"] .home-link{background:#f6ead9;border-color:#e1c8aa;color:#70482f}
+  body[data-season="autumn"] .winter-borders{background:repeating-linear-gradient(135deg,#d1a47c 0 8px,#f5e7d2 8px 16px);border-color:#e2c7a7}
+
+  @media print{
+    body[data-season="spring"],body[data-season="summer"],body[data-season="autumn"]{background:#fff!important;background-image:none!important}
+    body[data-season="spring"] section.card,body[data-season="summer"] section.card,body[data-season="autumn"] section.card{background:#fff!important}
+  }
+</style>
+</head>
+<body>
+
+<nav class="stepnav" id="stepnav">
+  <div class="wrap stepnav-inner">
+    <a href="#step1" data-step="step1">1 · Документ</a>
+    <a href="#step2" data-step="step2">2 · Тетради</a>
+    <a href="#step3" data-step="step3">3 · Результат</a>
+    <a href="index.html" class="home-link">⌂ Главное меню</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="winter-garland" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <svg class="season-art season-art--spring" viewBox="0 0 280 220" aria-hidden="true"><path d="M38 184C99 145 114 91 236 35M92 145c-27-2-43-17-52-39 24-2 43 9 52 39Zm35-41c-2-24 10-42 30-55 8 24-2 44-30 55Zm25 16c24-16 46-15 67-1-18 19-41 21-67 1Z" fill="#90aa7e"/><g fill="#e8bdcb" stroke="#fff8f6" stroke-width="2"><circle cx="114" cy="118" r="9"/><circle cx="127" cy="121" r="9"/><circle cx="120" cy="132" r="9"/><circle cx="120" cy="123" r="4" fill="#e6cb8b"/><circle cx="191" cy="73" r="8"/><circle cx="202" cy="77" r="8"/><circle cx="196" cy="87" r="8"/><circle cx="196" cy="79" r="3" fill="#e6cb8b"/></g></svg>
+  <svg class="season-art season-art--summer" viewBox="0 0 300 220" aria-hidden="true"><circle cx="208" cy="76" r="39" fill="#f3ca70"/><g stroke="#e9b957" stroke-width="5" stroke-linecap="round"><path d="M208 17V4M208 148v-13M149 76h-14M281 76h-14M166 34l-9-9M259 127l-9-9M250 34l9-9M157 127l9-9"/></g><path d="M0 151c45-24 80 22 124 0s78 21 122 0 54-5 54-5v74H0Z" fill="#69b8bb"/><path d="M0 175c45-24 80 22 124 0s78 21 122 0 54-5 54-5" fill="none" stroke="#e6f7f1" stroke-width="7" stroke-linecap="round"/><path d="M0 202c45-24 80 22 124 0s78 21 122 0 54-5 54-5" fill="none" stroke="#378f9a" stroke-width="4" stroke-linecap="round"/></svg>
+  <svg class="season-art season-art--autumn" viewBox="0 0 280 230" aria-hidden="true"><path d="M85 102c-8-24 7-42 14-53 8 15 17 31 8 50m26-1c-4-22 9-37 16-47 7 14 13 27 7 45" fill="none" stroke="#a89072" stroke-width="4" stroke-linecap="round"/><path d="M68 108h124l-17 82c-2 9-10 15-20 15h-50c-10 0-18-6-20-15Z" fill="#b87957" stroke="#83533f" stroke-width="5"/><path d="M78 116h104l-2 12H80Z" fill="#684638"/><path d="M191 123h18c28 0 28 50 0 50h-14" fill="none" stroke="#83533f" stroke-width="12"/><path d="M56 211h156" stroke="#9c7157" stroke-width="8" stroke-linecap="round"/><path d="M48 73c-18-20-16-40 1-57 24 14 27 34 6 57Zm171 34c-14-21-8-40 12-54 20 18 19 37-6 55Z" fill="#9a7956"/><path d="M61 68 50 25m160 77 16-37" stroke="#71583f" stroke-width="3"/></svg>
+  <div class="wrap">
+    <div class="eyebrow">калькулятор вёрстки</div>
+    <div class="winter-sparkles" aria-hidden="true">❄　✧　❄　✧　❄</div>
+    <h1>Печать документа<br><em>тетрадями</em></h1>
+    <p class="lede">Сколько листов А4 понадобится, как их сложить и в каком порядке подать страницы на печать — чтобы после сгиба получилась аккуратная тетрадь или брошюра.</p>
+    <div class="stitches" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+</header>
+<div class="winter-borders" aria-hidden="true"></div>
+
+<main class="wrap">
+
+  <!-- ================= STEP 1 ================= -->
+  <section class="card" id="step1">
+    <h2><span class="num">1</span> Документ и формат</h2>
+    <p class="sub">Укажите объём файла и выберите, во сколько раз сложить лист А4.</p>
+
+    <div class="grid">
+      <div>
+        <label for="pages">Страниц в документе<span class="hint">Общее число страниц A4 в исходном файле</span></label>
+        <div class="stepper">
+          <button type="button" aria-label="уменьшить" onclick="step('pages',-1)">–</button>
+          <input type="number" id="pages" min="1" value="80">
+          <button type="button" aria-label="увеличить" onclick="step('pages',1)">+</button>
+        </div>
+        <button type="button" class="pdf-hint" id="pdfHint" onclick="document.getElementById('pdfInput').click()">📄 определить по PDF-файлу</button>
+        <input type="file" id="pdfInput" accept="application/pdf" style="display:none">
+      </div>
+      <div>
+        <label>Формат после сгиба</label>
+        <div class="formats" id="formats">
+          <label class="fmt active" data-k="2">
+            <input type="radio" name="fmt" value="2" checked>
+            <div class="title">А5 · ×2</div>
+            <div class="desc">1 сгиб, 2 стр. на стороне</div>
+          </label>
+          <label class="fmt" data-k="4">
+            <input type="radio" name="fmt" value="4">
+            <div class="title">А6 · ×4</div>
+            <div class="desc">2 сгиба, 4 стр. на стороне</div>
+          </label>
+          <label class="fmt" data-k="8">
+            <input type="radio" name="fmt" value="8">
+            <div class="title">А7 · ×8</div>
+            <div class="desc">3 сгиба, 8 стр. на стороне</div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <svg id="foldSvg" width="170" height="120" viewBox="0 0 170 120"></svg>
+      <p class="legend" id="foldLegend"></p>
+    </div>
+
+    <div class="status-line" id="statusLine"></div>
+  </section>
+
+  <!-- ================= STEP 2 ================= -->
+  <section class="card" id="step2">
+    <h2><span class="num">2</span> Тетради</h2>
+    <p class="sub">Толстый документ удобнее прошивать несколькими тонкими тетрадями, чем одной. Оптимальный объём — около 32–40 страниц на тетрадь; ниже уже подставлены такие значения, но их можно изменить вручную.</p>
+
+    <div class="grid">
+      <div>
+        <label for="broshCount">Количество тетрадей<span class="hint">Сколько одинаковых тетрадей сделать</span></label>
+        <div class="stepper">
+          <button type="button" aria-label="уменьшить" onclick="step('broshCount',-1)">–</button>
+          <input type="number" id="broshCount" min="1" value="1">
+          <button type="button" aria-label="увеличить" onclick="step('broshCount',1)">+</button>
+        </div>
+      </div>
+      <div>
+        <label for="sheetsPerBrosh">Листов А4 на тетрадь<span class="hint">До сгиба, на одну тетрадь</span></label>
+        <div class="stepper">
+          <button type="button" aria-label="уменьшить" onclick="step('sheetsPerBrosh',-1)">–</button>
+          <input type="number" id="sheetsPerBrosh" min="1" value="1">
+          <button type="button" aria-label="увеличить" onclick="step('sheetsPerBrosh',1)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-actions">
+      <button class="btn btn-ghost" onclick="autoSuggest(true)">↺ Подобрать автоматически</button>
+      <button class="btn btn-primary" onclick="calc()">Пересчитать</button>
+    </div>
+  </section>
+
+  <!-- ================= RESULTS ================= -->
+  <section class="card" id="step3">
+    <h2><span class="num">3</span> Результат</h2>
+    <p class="sub">Пересчитывается сразу при изменении полей выше. Сохраните эту карточку или распечатайте её как памятку для принтера.</p>
+
+    <div class="stat-row" id="statRow">
+      <div class="stat"><div class="label">Листов А4 всего</div><div class="value" id="statSheets">0</div></div>
+      <div class="stat"><div class="label">Сгибов всего</div><div class="value" id="statFolds">0</div></div>
+      <div class="stat"><div class="label">Стр. на сторону листа</div><div class="value" id="statK">0</div></div>
+      <div class="stat"><div class="label">Тетрадей получится</div><div class="value" id="statBrosh">0</div></div>
+    </div>
+    <div id="sequences" aria-live="polite"></div>
+
+    <div class="row-actions">
+      <button class="btn btn-ghost" onclick="window.print()">🖨 Распечатать памятку</button>
+      <button class="btn btn-ghost" onclick="copyAll(this)">📋 Скопировать всё текстом</button>
+    </div>
+  </section>
+
+  <!-- ================= TIPS ================= -->
+  <section class="card">
+    <h2><span class="num">?</span> Как печатать</h2>
+    <p class="sub">Коротко о том, что легко упустить.</p>
+
+    <div class="acc-group" id="accGroup">
+      <div class="acc-item open">
+        <button class="acc-trigger"><span class="acc-icon"></span>Два способа пользоваться раскладом</button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-inner-pad">
+          <p><b>Быстрый способ:</b> скопируйте строку целиком и вставьте в поле «Страницы» диалога печати — сторона напечатается за один проход, сразу в нужном порядке.</p>
+          <p><b>Полистовой способ:</b> если поле «Страницы» не принимает такой длинный список, печатайте по одному листу А4, сверяясь со строкой нужного листа в таблице ниже.</p>
+        </div></div></div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger"><span class="acc-icon"></span>Как переворачивать стопку для обратной стороны</button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-inner-pad">
+          <p>Это зависит от того, как ваш принтер подаёт и выводит бумагу:</p>
+          <ul>
+            <li><b>Лицом вверх → лицом вверх</b> (чаще у струйных принтеров): используйте строку «Сторона 2 (реверс)» как есть.</li>
+            <li><b>Лицом вверх → лицом вниз</b> или наоборот (чаще у лазерных): используйте строку «Сторона 2, обратный порядок листов».</li>
+          </ul>
+          <p>При печати по 2 и по 8 страниц на сторону бумагу для обратной стороны обычно подают «ногами» вперёд — той кромкой, что вышла из принтера последней. При печати по 4 страницы — наоборот, «головой» вперёд. Проще всего один раз проверить на нескольких черновых листах и запомнить своё положение.</p>
+        </div></div></div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger"><span class="acc-icon"></span>Если страниц в документе не кратно нужному числу</button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-inner-pad">
+          <p>Калькулятор не добавляет пустых «технических» страниц: вместо недостающих позиций в раскладке повторно указывается номер последней страницы документа, и при печати в этом месте лист просто выйдет ещё раз. Если вам нужна настоящая пустая страница — добавьте её в конец файла и увеличьте число страниц в поле выше на единицу.</p>
+        </div></div></div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger"><span class="acc-icon"></span>Поля документа</button>
+        <div class="acc-panel"><div class="acc-inner"><div class="acc-inner-pad">
+          <p>Если левое и правое поля страницы не равны, после сгиба текст «уедет» в сторону. Сделайте поля одинаковыми либо включите в редакторе «зеркальные поля» и заложите нужную разницу в поле переплёта. Учтите: при масштабировании внутренние поля тоже уменьшаются, оставляя меньше места для прошивки.</p>
+        </div></div></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="winter-borders" aria-hidden="true" style="margin-bottom:28px"></div>
+  <div class="wrap"><div class="seasonal-signoff" aria-hidden="true"></div>По мотивам классического калькулятора вёрстки тетрадей С.&nbsp;В.&nbsp;Потоцкого · для личной печати</div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function step(id, d){
+    const el = $(id);
+    const v = Math.max(1, (parseInt(el.value,10)||1) + d);
+    el.value = v;
+    calc();
+  }
+  function currentK(){ return parseInt(document.querySelector('input[name=fmt]:checked').value,10); }
+
+  document.querySelectorAll('.fmt').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      document.querySelectorAll('.fmt').forEach(f=>f.classList.remove('active'));
+      el.classList.add('active');
+      redrawFoldSmooth();
+      autoSuggest(false);
+    });
+  });
+  ['pages','broshCount','sheetsPerBrosh'].forEach(id=>{
+    $(id).addEventListener('input', calc);
+  });
+
+  // ---------- sticky step nav: show after hero, highlight active section ----------
+  const stepnav = $('stepnav');
+  const heroEl = document.querySelector('header.hero');
+  new IntersectionObserver((entries)=>{
+    entries.forEach(en=> stepnav.classList.toggle('visible', !en.isIntersecting));
+  }, {threshold:0}).observe(heroEl);
+
+  const navLinks = {};
+  document.querySelectorAll('.stepnav a').forEach(a=> navLinks[a.dataset.step]=a);
+  const sectionObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if(en.isIntersecting){
+        Object.values(navLinks).forEach(a=>a.classList.remove('active'));
+        const link = navLinks[en.target.id];
+        if(link) link.classList.add('active');
+      }
+    });
+  }, {rootMargin:'-40% 0px -50% 0px'});
+  ['step1','step2','step3'].forEach(id=>{ const el=$(id); if(el) sectionObserver.observe(el); });
+
+  // ---------- custom smooth accordion (single-open) ----------
+  document.querySelectorAll('.acc-trigger').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const item = btn.closest('.acc-item');
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('#accGroup .acc-item').forEach(i=>i.classList.remove('open'));
+      if(!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // ---------- PDF page-count detection ----------
+  try{ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; }catch(e){}
+  $('pdfInput').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const hint = $('pdfHint');
+    const original = hint.textContent;
+    hint.classList.add('busy');
+    hint.textContent = 'считаю страницы…';
+    try{
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+      $('pages').value = pdf.numPages;
+      calc();
+      hint.textContent = `✓ найдено ${pdf.numPages} стр.`;
+    }catch(err){
+      hint.textContent = 'не получилось прочитать файл';
+    }finally{
+      hint.classList.remove('busy');
+      setTimeout(()=>{ hint.textContent = original; }, 2600);
+      e.target.value = '';
+    }
+  });
+
+  // ---------- fold diagram (cross-fades on change) ----------
+  function drawFold(){
+    const k = currentK();
+    const svg = $('foldSvg');
+    const legend = $('foldLegend');
+    let inner = '';
+    if(k===2){
+      inner = `<rect x="18" y="12" width="134" height="96" rx="4" fill="#f7f9fc" stroke="#c5d1e1" stroke-width="1.5"/>
+        <line x1="85" y1="12" x2="85" y2="108" stroke="#6282d7" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <text x="51" y="65" font-family="IBM Plex Mono" font-size="13" fill="#26354a" text-anchor="middle">1</text>
+        <text x="119" y="65" font-family="IBM Plex Mono" font-size="13" fill="#26354a" text-anchor="middle">2</text>`;
+      legend.innerHTML = '<b>1 сгиб</b> посередине листа А4 — две страницы формата А5 на каждой стороне.';
+    } else if(k===4){
+      inner = `<rect x="18" y="12" width="134" height="96" rx="4" fill="#f7f9fc" stroke="#c5d1e1" stroke-width="1.5"/>
+        <line x1="85" y1="12" x2="85" y2="108" stroke="#6282d7" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="18" y1="60" x2="152" y2="60" stroke="#6282d7" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <text x="51" y="42" font-family="IBM Plex Mono" font-size="12" fill="#26354a" text-anchor="middle">1</text>
+        <text x="119" y="42" font-family="IBM Plex Mono" font-size="12" fill="#26354a" text-anchor="middle">2</text>
+        <text x="51" y="90" font-family="IBM Plex Mono" font-size="12" fill="#26354a" text-anchor="middle">3</text>
+        <text x="119" y="90" font-family="IBM Plex Mono" font-size="12" fill="#26354a" text-anchor="middle">4</text>`;
+      legend.innerHTML = '<b>2 сгиба</b> (пополам, затем ещё раз поперёк) — четыре страницы формата А6 на каждой стороне.';
+    } else {
+      inner = `<rect x="18" y="12" width="134" height="96" rx="4" fill="#f7f9fc" stroke="#c5d1e1" stroke-width="1.5"/>
+        <line x1="85" y1="12" x2="85" y2="108" stroke="#6282d7" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="18" y1="60" x2="152" y2="60" stroke="#6282d7" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <line x1="51" y1="12" x2="51" y2="108" stroke="#6282d7" stroke-width="1" stroke-dasharray="2 3"/>
+        <line x1="119" y1="12" x2="119" y2="108" stroke="#6282d7" stroke-width="1" stroke-dasharray="2 3"/>
+        <text x="85" y="65" font-family="IBM Plex Mono" font-size="11" fill="#26354a" text-anchor="middle">×8</text>`;
+      legend.innerHTML = '<b>3 сгиба</b> — восемь страниц формата А7 на каждой стороне.';
+    }
+    svg.innerHTML = inner;
+  }
+  function redrawFoldSmooth(){
+    if(reduceMotion){ drawFold(); return; }
+    const svg = $('foldSvg'), legend = $('foldLegend');
+    svg.classList.add('fading'); legend.classList.add('fading');
+    setTimeout(()=>{
+      drawFold();
+      svg.classList.remove('fading'); legend.classList.remove('fading');
+    }, 160);
+  }
+
+  // ---------- core math (mirrors the original reckon()/calc_brosh_0 logic) ----------
+  function baseNumbers(N, k){
+    const divisibleBy = k*2;
+    const foldsPerA4 = k/2;
+    const A4sum = Math.ceil(N/divisibleBy);
+    const foldsSum = A4sum*foldsPerA4;
+    const foldsOpt = (k===8)?8:10;
+    return {divisibleBy, foldsPerA4, A4sum, foldsSum, foldsOpt};
+  }
+
+  function autoSuggest(forceScroll){
+    const N = Math.max(1, parseInt($('pages').value||1,10));
+    const k = currentK();
+    const {foldsPerA4, A4sum, foldsSum, foldsOpt} = baseNumbers(N,k);
+    let B, S;
+    if(foldsSum < 17){
+      B = 1; S = A4sum;
+    } else {
+      B = Math.max(1, Math.floor(foldsSum/foldsOpt));
+      S = Math.max(1, Math.round(foldsOpt/foldsPerA4));
+    }
+    $('broshCount').value = B;
+    $('sheetsPerBrosh').value = S;
+    calc();
+    if(forceScroll) $('step3').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function cap(v, N){ return v>N ? N : (v<1 ? 1 : v); }
+
+  function buildBooklet(N, k, offsetPages, pgPerBroshCr, sheetsInBrosh){
+    const foldsPerA4 = k/2;
+    const perSheet = [];
+    for(let j1=1; j1<=sheetsInBrosh; j1++){
+      const aversPairs = [];
+      const reversNatural = [];
+      for(let j2=1; j2<=foldsPerA4; j2++){
+        const j = j2 + (j1-1)*foldsPerA4;
+        const p1 = cap(pgPerBroshCr - (j-1)*2 + offsetPages, N);
+        const p2 = cap(1 + (j-1)*2 + offsetPages, N);
+        const p3 = cap(2 + (j-1)*2 + offsetPages, N);
+        const p4 = cap(pgPerBroshCr - 1 - (j-1)*2 + offsetPages, N);
+        aversPairs.push([p1,p2]);
+        reversNatural[j2] = [p3,p4];
+      }
+      let reversOrdered = [];
+      if(k===8){
+        for(let j2=1; j2<=foldsPerA4; j2++){
+          reversOrdered.push( (j2%2===0) ? reversNatural[j2-1] : reversNatural[j2+1] );
+        }
+      } else {
+        for(let j2=1; j2<=foldsPerA4; j2++) reversOrdered.push(reversNatural[j2]);
+      }
+      perSheet.push({avers:aversPairs, revers:reversOrdered});
+    }
+    return perSheet;
+  }
+
+  function pairsToStr(pairs){ return pairs.map(p=>p[0]+','+p[1]).join(','); }
+
+  function animateValue(id, to){
+    const el = $(id);
+    const from = parseInt(el.textContent)||0;
+    if(reduceMotion || from===to){ el.textContent = to; return; }
+    const duration = 420;
+    const start = performance.now();
+    function tick(now){
+      const p = Math.min(1, (now-start)/duration);
+      const eased = 1 - Math.pow(1-p, 3);
+      el.textContent = Math.round(from + (to-from)*eased);
+      if(p<1) requestAnimationFrame(tick); else el.textContent = to;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  let lastPlainText = '';
+
+  function calc(){
+    const N = Math.max(1, parseInt($('pages').value||1,10));
+    const k = currentK();
+    const {divisibleBy, A4sum, foldsSum} = baseNumbers(N,k);
+
+    const statusLine = $('statusLine');
+    if(N % divisibleBy === 0){
+      statusLine.className = 'status-line';
+      statusLine.innerHTML = `<span class="dot"></span> Объём документа кратен нужному числу — раскладка получится ровной, без повторов страниц.`;
+    } else {
+      const need = divisibleBy - (N % divisibleBy);
+      statusLine.className = 'status-line warn';
+      statusLine.innerHTML = `<span class="dot"></span> До ровного объёма не хватает <b>${need}</b> стр.: последняя страница документа появится в раскладке несколько раз подряд — это нормально, подробнее ниже, в разделе «Как печатать».`;
+    }
+
+    let B = Math.max(1, parseInt($('broshCount').value||1,10));
+    let S = Math.max(1, parseInt($('sheetsPerBrosh').value||1,10));
+
+    animateValue('statSheets', A4sum);
+    animateValue('statFolds', foldsSum);
+    animateValue('statK', k);
+
+    const seqBox = $('sequences');
+    seqBox.innerHTML = '';
+
+    let plain = `ПЕЧАТЬ ДОКУМЕНТА ТЕТРАДЯМИ\n`;
+    plain += `Страниц в документе: ${N}. Формат: ×${k} на сторону. Листов А4: ${A4sum}. Сгибов: ${foldsSum}.\n`;
+
+    let offsetSheets = 0;
+    let broshNum = 0;
+    const blocks = [];
+    for(let i=1; i<=B && offsetSheets < A4sum; i++){
+      const sheetsHere = Math.min(S, A4sum-offsetSheets);
+      blocks.push({sheets:sheetsHere, offsetSheets, isLast:false});
+      offsetSheets += sheetsHere;
+      broshNum++;
+    }
+    if(offsetSheets < A4sum){
+      const sheetsHere = A4sum - offsetSheets;
+      blocks.push({sheets:sheetsHere, offsetSheets, isLast:true});
+      broshNum++;
+    }
+    animateValue('statBrosh', broshNum);
+
+    blocks.forEach((blk, idx)=>{
+      if(blk.sheets<=0) return;
+      const pgPerBroshCr = blk.sheets*k*2;
+      const offsetPages = blk.offsetSheets*k*2;
+      const perSheet = buildBooklet(N, k, offsetPages, pgPerBroshCr, blk.sheets);
+
+      const aversWhole = pairsToStr(perSheet.flatMap(s=>s.avers));
+      const reversWhole = pairsToStr(perSheet.flatMap(s=>s.revers));
+      const reversRevWhole = pairsToStr(perSheet.slice().reverse().flatMap(s=>s.revers));
+
+      let sheetRows = '';
+      let plainSheetRows = '';
+      perSheet.forEach((s,j)=>{
+        sheetRows += `<tr><td>${j+1}</td><td>${pairsToStr(s.avers)}</td><td>${pairsToStr(s.revers)}</td></tr>`;
+        plainSheetRows += `  лист ${j+1}: аверс ${pairsToStr(s.avers)} / реверс ${pairsToStr(s.revers)}\n`;
+      });
+
+      const title = blk.isLast && blocks.length>1 ? `Остаточная тетрадь` : `Тетрадь №${idx+1}`;
+      const block = document.createElement('div');
+      block.className = 'brosh-block';
+      block.style.animationDelay = (idx*70)+'ms';
+      block.innerHTML = `
+        <h3>${title} <span class="tag">${blk.sheets} лист(а/ов) А4 · ${pgPerBroshCr} стр.</span></h3>
+
+        <div class="method-label">Быстрый способ — вставить в поле «Страницы»</div>
+        <div class="seq"><span class="side-label">Сторона 1 (лицо)</span><code>${aversWhole}</code><button class="copy" type="button" onclick="copySeq(this)">Скопировать</button></div>
+        <div class="seq"><span class="side-label">Сторона 2 (реверс)</span><code>${reversWhole}</code><button class="copy" type="button" onclick="copySeq(this)">Скопировать</button></div>
+        <div class="seq"><span class="side-label">Сторона 2, обратный порядок</span><code>${reversRevWhole}</code><button class="copy" type="button" onclick="copySeq(this)">Скопировать</button></div>
+
+        <div class="method-label">Полистовой способ — печатать по одному листу</div>
+        <table class="sheet-table">
+          <tr><th>Лист</th><th>Аверс (лицо)</th><th>Реверс (обратная)</th></tr>
+          ${sheetRows}
+        </table>
+      `;
+      seqBox.appendChild(block);
+
+      plain += `\n${title} (${blk.sheets} лист(а/ов) А4, ${pgPerBroshCr} стр.)\n`;
+      plain += `  Сторона 1 (лицо): ${aversWhole}\n`;
+      plain += `  Сторона 2 (реверс): ${reversWhole}\n`;
+      plain += `  Сторона 2, обратный порядок: ${reversRevWhole}\n`;
+      plain += `  Полистовой расклад:\n${plainSheetRows}`;
+    });
+
+    if(k!==2){
+      const note = document.createElement('div');
+      note.className = 'status-line';
+      note.style.marginTop = '16px';
+      note.innerHTML = `<span class="dot"></span> Для формата ×${k} важна аккуратность сборки: сверяйтесь с полистовой таблицей и не путайте порядок листов при печати каждой тетради.`;
+      seqBox.appendChild(note);
+    }
+
+    lastPlainText = plain;
+    saveSettings();
+  }
+
+  async function writeClipboard(text){
+    if(navigator.clipboard && window.isSecureContext){
+      try{
+        await navigator.clipboard.writeText(text);
+        return true;
+      }catch(err){ /* Try the compatibility path below. */ }
+    }
+    try{
+      const field = document.createElement('textarea');
+      field.value = text;
+      field.setAttribute('readonly','');
+      field.style.position = 'fixed';
+      field.style.left = '-9999px';
+      field.style.top = '0';
+      document.body.appendChild(field);
+      field.focus();
+      field.select();
+      const copied = document.execCommand('copy');
+      field.remove();
+      return copied;
+    }catch(err){ return false; }
+  }
+
+  async function copySeq(btn){
+    const code = btn.previousElementSibling;
+    const copied = await writeClipboard(code.textContent.trim());
+    const old = btn.textContent;
+    btn.textContent = copied ? '✓ Скопировано' : 'Не удалось';
+    setTimeout(()=>btn.textContent=old, 1500);
+  }
+  async function copyAll(btn){
+    const copied = await writeClipboard(lastPlainText);
+    const old = btn.textContent;
+    btn.textContent = copied ? '✓ Скопировано' : 'Не удалось скопировать';
+    setTimeout(()=>btn.textContent=old, 1600);
+  }
+
+  function saveSettings(){
+    try{
+      localStorage.setItem('tetradiSettings', JSON.stringify({
+        pages: $('pages').value, k: currentK(),
+        broshCount: $('broshCount').value, sheetsPerBrosh: $('sheetsPerBrosh').value
+      }));
+    }catch(e){}
+  }
+  function loadSettings(){
+    try{
+      const s = JSON.parse(localStorage.getItem('tetradiSettings')||'null');
+      if(!s) return false;
+      $('pages').value = s.pages;
+      const radio = document.querySelector(`input[name=fmt][value="${s.k}"]`);
+      if(radio){
+        radio.checked = true;
+        document.querySelectorAll('.fmt').forEach(f=>f.classList.toggle('active', f.dataset.k===String(s.k)));
+      }
+      $('broshCount').value = s.broshCount;
+      $('sheetsPerBrosh').value = s.sheetsPerBrosh;
+      return true;
+    }catch(e){ return false; }
+  }
+
+  drawFold();
+  if(loadSettings()){ calc(); } else { autoSuggest(false); }
+</script>
+<script>
+(()=>{
+  const allowed=['winter','spring','summer','autumn'];
+  const requested=new URLSearchParams(location.search).get('season');
+  let season=allowed.includes(requested)?requested:'';
+  if(!season){
+    const now=new Date(), month=now.getMonth()+1, day=now.getDate();
+    if((month===11&&day>=15)||month===12||month===1||(month===2&&day<=15)) season='winter';
+    else if((month===2&&day>=16)||month===3||month===4||(month===5&&day<=15)) season='spring';
+    else if((month===5&&day>=16)||month===6||month===7||month===8) season='summer';
+    else season='autumn';
+  }
+  document.body.dataset.season=season;
+})();
+</script>
+</body>
+</html>

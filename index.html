@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Подготовка тетради</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                         "SF Pro Text", Arial, sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: min(720px, calc(100% - 40px));
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 38px;
+            margin: 0 0 10px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: #86868b;
+            font-size: 17px;
+            margin-bottom: 45px;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .step {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            text-align: left;
+            text-decoration: none;
+            color: inherit;
+
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+
+        .step:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .number {
+            width: 34px;
+            height: 34px;
+
+            border-radius: 50%;
+            background: #1d1d1f;
+            color: white;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 15px;
+            font-weight: 600;
+
+            margin-bottom: 22px;
+        }
+
+        .step-title {
+            font-size: 21px;
+            font-weight: 650;
+            margin-bottom: 8px;
+        }
+
+        .step-description {
+            color: #86868b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .arrow {
+            margin-top: 22px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #007aff;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 30px;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        :root{--winter-ink:#18334b;--winter-muted:#627f98;--winter-blue:#477fa9;--winter-ice:#eaf5fc;--winter-line:#d6e7f3}
+        body{position:relative;overflow-x:hidden;background:radial-gradient(circle at 12% 12%,rgba(193,224,245,.68),transparent 27%),radial-gradient(circle at 90% 82%,rgba(214,232,247,.7),transparent 30%),linear-gradient(145deg,#eef6fc,#f8fbff 55%,#edf5fb);color:var(--winter-ink)}
+        body::before{content:"❄";position:fixed;left:3vw;top:8vh;color:rgba(93,151,194,.12);font-size:clamp(100px,18vw,220px);pointer-events:none;transform:rotate(-13deg)}
+        body::after{content:"❅";position:fixed;right:4vw;bottom:5vh;color:rgba(93,151,194,.13);font-size:clamp(90px,15vw,180px);pointer-events:none;transform:rotate(13deg)}
+        .container{position:relative;z-index:1;padding:44px 0}
+        .garland{height:25px;display:flex;justify-content:space-around;position:relative;margin:0 auto 32px;width:min(560px,90%);border-bottom:2px solid #a8c7dc;border-radius:0 0 50% 50%}
+        .garland i{width:12px;height:14px;margin-top:12px;border-radius:50%;background:#bce8fb;border:1px solid white;box-shadow:0 0 13px 4px rgba(159,216,247,.7);animation:glow 2.7s ease-in-out infinite alternate}
+        .garland i:nth-child(even){background:#fff;animation-delay:.8s;box-shadow:0 0 13px 4px rgba(255,255,255,.9)}
+        .garland i:nth-child(3n){background:#c4d3ff;animation-delay:1.3s;box-shadow:0 0 13px 4px rgba(178,197,255,.7)}
+        @keyframes glow{to{filter:brightness(1.2);opacity:.76}}
+        h1{color:#183b59;text-shadow:0 3px 20px rgba(112,164,201,.15)}
+        .subtitle{color:#66829a}
+        .steps{gap:20px}
+        .step{position:relative;overflow:hidden;border:1px solid #dce9f2;background:rgba(255,255,255,.88);box-shadow:0 14px 34px rgba(43,82,112,.09);backdrop-filter:blur(8px)}
+        .step::after{content:"❄";position:absolute;right:14px;top:12px;color:#b7d5e9;font-size:17px;opacity:.72;transition:transform .25s,opacity .2s}
+        .step:hover{transform:translateY(-5px);border-color:#a9cce3;box-shadow:0 18px 38px rgba(43,92,130,.17)}
+        .step:hover::after{transform:rotate(28deg) scale(1.2);opacity:1}
+        .number{background:linear-gradient(145deg,#7fb5d8,#507ea8);box-shadow:0 5px 14px rgba(78,130,171,.24)}
+        .step-title{color:#244a68}
+        .step-description,.subtitle{color:#66829a}
+        .arrow{color:#4e8db8}
+        a:focus-visible{outline:3px solid #83b8db;outline-offset:4px;border-radius:22px}
+        @media(prefers-reduced-motion:reduce){.garland i{animation:none}}
+        @media(max-width:600px){.container{padding:28px 0}.garland{margin-bottom:26px}.winter-label{margin-top:-12px}}
+
+
+        body[data-season="spring"]{background-image:radial-gradient(circle at 12% 12%,rgba(196,235,218,.72),transparent 28%),radial-gradient(circle at 90% 82%,rgba(219,241,230,.8),transparent 30%),linear-gradient(145deg,#eff9f3,#fbfdfa 55%,#edf7f0)}
+        body[data-season="spring"]::before{content:"✿";color:rgba(91,161,125,.12)} body[data-season="spring"]::after{content:"❀";color:rgba(114,174,143,.14)}
+        body[data-season="spring"] .garland{border-color:#acd1bb}
+        body[data-season="spring"] .garland i{background:#b8e5cb;box-shadow:0 0 13px 4px rgba(167,220,189,.68)}
+        body[data-season="spring"] .garland i:nth-child(even){background:#fff;box-shadow:0 0 13px 4px rgba(255,255,255,.9)}
+        body[data-season="spring"] .garland i:nth-child(3n){background:#d1c9ef;box-shadow:0 0 13px 4px rgba(193,182,232,.65)}
+        body[data-season="spring"] h1{color:#285843} body[data-season="spring"] .number{background:linear-gradient(145deg,#78b994,#528a70)}
+        body[data-season="spring"] .step:hover{border-color:#a8d1b8;box-shadow:0 18px 38px rgba(48,111,76,.15)}
+        body[data-season="spring"] .arrow{color:#4f9870}
+        body[data-season="spring"] .step::after{content:"✿";color:#a6cdb2}
+        body[data-season="autumn"]{background-image:radial-gradient(circle at 12% 12%,rgba(225,218,195,.72),transparent 28%),radial-gradient(circle at 90% 82%,rgba(232,224,205,.75),transparent 30%),linear-gradient(145deg,#f7f4ec,#fdfcf9 55%,#f2eee5)}
+        body[data-season="autumn"]::before{content:"❧";color:rgba(151,132,91,.13)} body[data-season="autumn"]::after{content:"❦";color:rgba(151,132,91,.13)}
+        body[data-season="autumn"] .garland{border-color:#c7bda5}
+        body[data-season="autumn"] .garland i{background:#c8c2ae;box-shadow:0 0 13px 4px rgba(196,189,165,.58)}
+        body[data-season="autumn"] .garland i:nth-child(even){background:#fff;box-shadow:0 0 13px 4px rgba(255,255,255,.9)}
+        body[data-season="autumn"] .garland i:nth-child(3n){background:#b7c5b1;box-shadow:0 0 13px 4px rgba(173,192,167,.62)}
+        body[data-season="autumn"] h1{color:#4b493d} body[data-season="autumn"] .number{background:linear-gradient(145deg,#8c9a87,#697967)}
+        body[data-season="autumn"] .step:hover{border-color:#c8c4b2;box-shadow:0 18px 38px rgba(94,91,70,.14)}
+        body[data-season="autumn"] .arrow{color:#71816d}
+        body[data-season="autumn"] .step::after{content:"❧";color:#c2b99f}
+
+
+        .container::before,.container::after{content:"";position:fixed;z-index:-1;pointer-events:none;opacity:.12;font-size:clamp(90px,15vw,180px)}
+        .container::before{left:2vw;top:16vh}.container::after{right:2vw;bottom:9vh}
+        body[data-season="winter"] .container::before{content:"❄";color:#568bb4;transform:rotate(-13deg)}body[data-season="winter"] .container::after{content:"❅";color:#73a4c8;transform:rotate(13deg)}
+        body[data-season="spring"]{background-image:radial-gradient(circle at 12% 12%,rgba(196,235,218,.72),transparent 28%),radial-gradient(circle at 90% 82%,rgba(219,241,230,.8),transparent 30%),linear-gradient(145deg,#eff9f3,#fbfdfa 55%,#edf7f0)}
+        body[data-season="spring"] .container::before{content:"✿";color:#70a987;transform:rotate(-12deg)}body[data-season="spring"] .container::after{content:"❀";color:#84b996;transform:rotate(12deg)}
+        body[data-season="spring"] .garland{height:36px;border:0;border-radius:0;margin-bottom:28px}
+        body[data-season="spring"] .garland::before{content:"";position:absolute;left:7%;right:7%;top:18px;height:14px;border-top:2px solid #98bd9f;border-radius:50%;transform:rotate(-2deg)}
+        body[data-season="spring"] .garland i{position:relative;z-index:1;width:14px;height:14px;margin-top:9px;border:2px solid #fff;border-radius:50%;background:#e6b9cc;box-shadow:0 0 0 3px #f7e8ef,0 3px 8px rgba(91,133,103,.14)}
+        body[data-season="spring"] .garland i:nth-child(3n){background:#f2d9a1;box-shadow:0 0 0 3px #fbf1db,0 3px 8px rgba(91,133,103,.14)}
+        body[data-season="spring"] .garland i:nth-child(3n + 1){background:#c8dfc4;box-shadow:0 0 0 3px #edf5e9,0 3px 8px rgba(91,133,103,.14)}
+        body[data-season="spring"] .garland i:nth-child(even){background:#d5c9ed;box-shadow:0 0 0 3px #f0ebf8,0 3px 8px rgba(91,133,103,.14)}
+        body[data-season="spring"] h1{color:#285843}body[data-season="spring"] .number{background:linear-gradient(145deg,#78b994,#528a70)}body[data-season="spring"] .arrow{color:#4f9870}
+        body[data-season="spring"] .step{background:linear-gradient(145deg,#fff,#f5fbf5);border-color:#d8e9dc}body[data-season="spring"] .step:hover{border-color:#a8d1b8;box-shadow:0 18px 38px rgba(48,111,76,.15)}body[data-season="spring"] .step::after{content:"✿";color:#a6cdb2}
+        body[data-season="summer"]{background-image:radial-gradient(circle at 78% 17%,rgba(255,221,139,.36),transparent 22%),radial-gradient(circle at 8% 80%,rgba(133,212,221,.34),transparent 30%),linear-gradient(145deg,#effbfc,#fbfdfb 55%,#eaf7f5)}
+        body[data-season="summer"] .container::before{content:"☼";color:#d6ac58;opacity:.16;transform:rotate(-8deg)}body[data-season="summer"] .container::after{content:"〰";color:#55aeba;opacity:.2;transform:rotate(-12deg)}
+        body[data-season="summer"] .garland{height:48px;border:0;border-radius:0;margin-bottom:28px}
+        body[data-season="summer"] .garland::before{content:"";position:absolute;left:5%;right:5%;top:4px;height:28px;border-top:2px solid #8bbcc0;border-radius:50%}
+        body[data-season="summer"] .garland i{width:0;height:0;margin-top:10px;border-left:10px solid transparent;border-right:10px solid transparent;border-top:23px solid #74c4c4;border-radius:0;background:transparent;box-shadow:none;filter:drop-shadow(0 2px 2px rgba(53,117,128,.12))}
+        body[data-season="summer"] .garland i:nth-child(even){border-top-color:#f0d28a}body[data-season="summer"] .garland i:nth-child(3n){border-top-color:#8db8df}body[data-season="summer"] .garland i:nth-child(3n + 1){border-top-color:#7db89b}
+        body[data-season="summer"] h1{color:#245a65}body[data-season="summer"] .number{background:linear-gradient(145deg,#57b5bd,#398d9a)}body[data-season="summer"] .arrow{color:#328f9a}
+        body[data-season="summer"] .step{background:linear-gradient(145deg,#fff,#f1fbfa);border-color:#d0e9e7}body[data-season="summer"] .step:hover{border-color:#91ccca;box-shadow:0 18px 38px rgba(48,119,127,.16)}body[data-season="summer"] .step::after{content:"✦";color:#91c8c7}
+        body[data-season="autumn"]{background-image:radial-gradient(circle at 12% 12%,rgba(225,218,195,.72),transparent 28%),radial-gradient(circle at 90% 82%,rgba(232,224,205,.75),transparent 30%),linear-gradient(145deg,#f7f4ec,#fdfcf9 55%,#f2eee5)}
+        body[data-season="autumn"] .container::before{content:"❧";color:#9d8f6f;transform:rotate(-24deg)}body[data-season="autumn"] .container::after{content:"❦";color:#aa9471;transform:rotate(22deg)}
+        body[data-season="autumn"] .garland{height:38px;border:0;border-radius:0;margin-bottom:28px}
+        body[data-season="autumn"] .garland::before{content:"";position:absolute;left:6%;right:6%;top:17px;height:15px;border-top:2px solid #b4a98c;border-radius:50%;transform:rotate(2deg)}
+        body[data-season="autumn"] .garland i{position:relative;z-index:1;width:18px;height:12px;margin-top:9px;border-radius:2px 90% 2px 90%;background:#a8ad8e;transform:rotate(32deg);box-shadow:none;animation:leafDrift 4s ease-in-out infinite alternate}
+        body[data-season="autumn"] .garland i:nth-child(even){background:#c5aa78;transform:rotate(-28deg);animation-delay:.6s}body[data-season="autumn"] .garland i:nth-child(3n){background:#b58d76;animation-delay:1s}body[data-season="autumn"] .garland i:nth-child(3n + 1){background:#8fa18b}
+        @keyframes leafDrift{to{transform:translateY(3px) rotate(48deg)}}
+        body[data-season="autumn"] h1{color:#4b493d}body[data-season="autumn"] .number{background:linear-gradient(145deg,#8c9a87,#697967)}body[data-season="autumn"] .arrow{color:#71816d}
+        body[data-season="autumn"] .step{background:linear-gradient(145deg,#fff,#faf8f1);border-color:#e6e1d4}body[data-season="autumn"] .step:hover{border-color:#c8c4b2;box-shadow:0 18px 38px rgba(94,91,70,.14)}body[data-season="autumn"] .step::after{content:"❧";color:#c2b99f}
+        @media(prefers-reduced-motion:reduce){body[data-season="autumn"] .garland i{animation:none}}
+
+        /* Весна: сад после дождя, лепестки и мягкие зелёные поверхности. */
+        body[data-season="spring"]{background:radial-gradient(ellipse at 50% 0%,#e1f2e4 0,transparent 38%),linear-gradient(155deg,#f4faf2,#fbfcf7 52%,#edf5e9)}
+        body[data-season="spring"] .garland{display:none}
+        body[data-season="spring"] .container::before{content:"❀";left:5vw;top:12vh;font-size:clamp(130px,20vw,245px);color:#d2a9bb;opacity:.19;transform:rotate(-20deg)}
+        body[data-season="spring"] .container::after{content:"✿";right:6vw;bottom:10vh;font-size:clamp(110px,16vw,205px);color:#9fbea0;opacity:.19;transform:rotate(18deg)}
+        body[data-season="spring"] h1{position:relative;color:#31583d;letter-spacing:-1.5px}
+        body[data-season="spring"] .subtitle{color:#6b856e}
+        body[data-season="spring"] .step{background:linear-gradient(145deg,#fff 15%,#f5faf1 100%);border:1px solid #dce9d8;box-shadow:0 16px 40px rgba(75,112,70,.09)}
+        body[data-season="spring"] .step::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#d7b0c1,#a7c29f);opacity:.8}
+        body[data-season="spring"] .step::after{content:"✿";color:#c49caf;font-size:19px}
+        body[data-season="spring"] .step:hover{transform:translateY(-6px);border-color:#b9d0b3;box-shadow:0 21px 42px rgba(75,112,70,.15)}
+        body[data-season="spring"] .number{background:linear-gradient(145deg,#82ad80,#527b5b);box-shadow:0 5px 15px rgba(70,113,75,.25)}
+        body[data-season="spring"] .step-title{color:#355b40}body[data-season="spring"] .arrow{color:#548060}
+
+        /* Лето: яркий берег, солнце и бирюзовые волны вместо гирлянд. */
+        body[data-season="summer"]{background:radial-gradient(ellipse at 88% 8%,rgba(255,218,128,.5),transparent 24%),radial-gradient(ellipse at 5% 85%,rgba(102,204,203,.28),transparent 32%),linear-gradient(155deg,#edfafa,#fcfdf8 52%,#e7f6f3)}
+        body[data-season="summer"] .garland{display:none}
+        body[data-season="summer"] .container::before{content:"☼";left:auto;right:7vw;top:7vh;font-size:clamp(150px,23vw,280px);color:#e5bd61;opacity:.2;transform:rotate(-12deg)}
+        body[data-season="summer"] .container::after{content:"〰";left:4vw;right:auto;bottom:7vh;font-size:clamp(100px,18vw,220px);color:#58aeb1;opacity:.2;transform:rotate(-8deg)}
+        body[data-season="summer"] h1{color:#245a61;letter-spacing:-1.5px}
+        body[data-season="summer"] .subtitle{color:#64878a}
+        body[data-season="summer"] .step{background:linear-gradient(145deg,#fff 5%,#f0fbf8 100%);border:1px solid #d2eae5;box-shadow:0 16px 40px rgba(44,117,119,.1)}
+        body[data-season="summer"] .step::before{content:"";position:absolute;inset:auto 0 0;height:4px;background:linear-gradient(90deg,#75c5c2,#f0d28c,#83b9d1)}
+        body[data-season="summer"] .step::after{content:"✦";color:#70b8b8;font-size:19px}
+        body[data-season="summer"] .step:hover{transform:translateY(-6px);border-color:#9fd1ca;box-shadow:0 21px 42px rgba(44,117,119,.16)}
+        body[data-season="summer"] .number{background:linear-gradient(145deg,#55b4b5,#347e8a);box-shadow:0 5px 15px rgba(45,130,139,.25)}
+        body[data-season="summer"] .step-title{color:#285e64}body[data-season="summer"] .arrow{color:#318f97}
+
+        /* Осень: книжная бумага, ветви и приглушённая листва. */
+        body[data-season="autumn"]{background:radial-gradient(ellipse at 50% 0%,#ebe6d6 0,transparent 38%),linear-gradient(155deg,#f6f3ea,#fbfaf5 52%,#efede3)}
+        body[data-season="autumn"] .garland{display:none}
+        body[data-season="autumn"] .container::before{content:"❧";left:3vw;top:13vh;font-size:clamp(130px,20vw,245px);color:#89927a;opacity:.17;transform:rotate(-30deg)}
+        body[data-season="autumn"] .container::after{content:"❦";right:4vw;bottom:9vh;font-size:clamp(120px,18vw,220px);color:#a38f6d;opacity:.16;transform:rotate(20deg)}
+        body[data-season="autumn"] h1{color:#4a4b3d;font-family:Georgia,"Times New Roman",serif;font-weight:600;letter-spacing:-1px}
+        body[data-season="autumn"] .subtitle{color:#817b68}
+        body[data-season="autumn"] .step{background:linear-gradient(145deg,#fffefa 5%,#f8f5eb 100%);border:1px solid #e8e1d0;box-shadow:0 16px 40px rgba(91,82,59,.1)}
+        body[data-season="autumn"] .step::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(#aa9271,#87927a);opacity:.8}
+        body[data-season="autumn"] .step::after{content:"❧";color:#aa9875;font-size:19px}
+        body[data-season="autumn"] .step:hover{transform:translateY(-5px);border-color:#cfc5ad;box-shadow:0 20px 42px rgba(91,82,59,.16)}
+        body[data-season="autumn"] .number{background:linear-gradient(145deg,#92967c,#697a69);box-shadow:0 5px 15px rgba(86,101,77,.22)}
+        body[data-season="autumn"] .step-title{color:#4c5141}body[data-season="autumn"] .arrow{color:#71816e}
+        .season-illustrations{height:116px;display:flex;align-items:center;justify-content:center;margin:-12px auto 18px;position:relative}
+        .season-illustration{display:none;width:220px;height:116px;filter:drop-shadow(0 8px 10px rgba(53,70,52,.1))}
+        body[data-season="spring"] .spring-scene,body[data-season="summer"] .summer-scene,body[data-season="autumn"] .autumn-scene{display:block}
+        body[data-season="autumn"]{background:radial-gradient(ellipse at 50% 0%,#eee1cc 0,transparent 42%),linear-gradient(155deg,#f4ecdc,#fbf7ee 55%,#eee4d2)}
+        body[data-season="autumn"] h1{color:#573b2d;font-family:Georgia,"Times New Roman",serif;font-size:42px}
+        body[data-season="autumn"] .step{background:linear-gradient(145deg,#fff9ef,#f6ecdb);border-color:#e5d3bc;box-shadow:0 16px 40px rgba(92,59,39,.12)}
+        body[data-season="autumn"] .step::before{background:linear-gradient(#9d6848,#c6955e)}body[data-season="autumn"] .step::after{content:"❧";color:#bd8b60}
+        body[data-season="autumn"] .number{background:linear-gradient(145deg,#936346,#68442f);box-shadow:0 5px 15px rgba(87,55,36,.25)}body[data-season="autumn"] .step-title{color:#604330}body[data-season="autumn"] .arrow{color:#916044}
+        body[data-season="summer"] .step::after{content:"☼";color:#d4ae58}body[data-season="spring"] .step::after{content:"✿";color:#c49caf}
+        @media(max-width:600px){.season-illustrations{height:92px;margin-top:-6px}.season-illustration{width:180px;height:92px}body[data-season="autumn"] h1{font-size:34px}}
+        @media(prefers-reduced-motion:reduce){body[data-season] .step:hover{transform:none}}
+        body[data-season="spring"] a:focus-visible{outline-color:#88a878}body[data-season="summer"] a:focus-visible{outline-color:#56aeb1}body[data-season="autumn"] a:focus-visible{outline-color:#ad7952}
+        .step:hover{transform:none!important}
+        .step:hover::after{transform:none!important;transition:none!important}
+    
+        /* Stable hover hit areas: no moving cards or animated button effects. */
+        .step,.step::after{transition:none!important;animation:none!important}
+        .step:hover{transform:none!important;filter:none!important}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="garland" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+    <h1>Подготовка тетради</h1>
+
+    <div class="subtitle">
+        Подготовьте PDF к печати в два простых этапа
+    </div>
+
+    <div class="season-illustrations" aria-hidden="true">
+      <svg class="season-illustration spring-scene" viewBox="0 0 240 120"><path d="M25 104Q90 58 207 20M73 78Q42 72 37 48q31-1 36 30m34-36q-1-26 21-36 12 22-17 40m7 18q29-17 49-4-17 24-49 4" fill="none" stroke="#7f9d77" stroke-width="4" stroke-linecap="round"/><g fill="#e6bdcb" stroke="#fff" stroke-width="2"><circle cx="102" cy="57" r="9"/><circle cx="115" cy="60" r="9"/><circle cx="108" cy="70" r="9"/><circle cx="108" cy="62" r="3" fill="#e5cb8e"/><circle cx="171" cy="34" r="8"/><circle cx="182" cy="37" r="8"/><circle cx="176" cy="47" r="8"/><circle cx="176" cy="39" r="3" fill="#e5cb8e"/></g></svg>
+      <svg class="season-illustration summer-scene" viewBox="0 0 240 120"><circle cx="176" cy="33" r="22" fill="#f0c66d"/><path d="M0 79q30-17 60 0t60 0 60 0 60 0v41H0Z" fill="#65b7b8"/><path d="M0 91q30-17 60 0t60 0 60 0 60 0M0 108q30-17 60 0t60 0 60 0 60 0" fill="none" stroke="#f4fbf5" stroke-width="4" stroke-linecap="round"/><path d="M175 0v-8m0 82v-8m-33-33h-8m82 0h-8" stroke="#dfa94e" stroke-width="3" stroke-linecap="round"/></svg>
+      <svg class="season-illustration autumn-scene" viewBox="0 0 240 120"><path d="M65 49h93l-12 55q-2 8-11 8H88q-9 0-11-8Z" fill="#ad704e" stroke="#78503c" stroke-width="4"/><path d="M72 56h79" stroke="#57382d" stroke-width="7"/><path d="M158 61h15q22 0 15 25-3 10-16 10" fill="none" stroke="#78503c" stroke-width="7"/><path d="M54 114h143" stroke="#937152" stroke-width="5" stroke-linecap="round"/><path d="M80 36q-8-16 5-29m37 29q-6-16 9-27" fill="none" stroke="#a78b6c" stroke-width="3" stroke-linecap="round"/><path d="M35 31q-12-16 1-29 21 11 8 29Zm158 10q-9-17 8-29 19 14-1 29Z" fill="#9a7956"/></svg>
+    </div>
+
+    <div class="steps">
+
+        <!-- Этап 1 -->
+        <a href="notes.html" class="step">
+
+            <div class="number">1</div>
+
+            <div class="step-title">
+                Подравнять страницы
+            </div>
+
+            <div class="step-description">
+                Удаление ненужных страниц и добавление белых страниц,
+                чтобы количество страниц было кратно четырём.
+            </div>
+
+            <div class="arrow">
+                Перейти →
+            </div>
+
+        </a>
+
+
+        <!-- Этап 2 -->
+        <a href="print.html" class="step">
+
+            <div class="number">2</div>
+
+            <div class="step-title">
+                Распечатать тетрадь
+            </div>
+
+            <div class="step-description">
+                Распечатка подготовленной тетради.
+            </div>
+
+            <div class="arrow">
+                Перейти →
+            </div>
+
+        </a>
+
+    </div>
+
+</div>
+
+<script>
+(()=>{
+  const allowed=['winter','spring','summer','autumn'];
+  const requested=new URLSearchParams(location.search).get('season');
+  let season=allowed.includes(requested)?requested:'';
+  if(!season){
+    const now=new Date(), month=now.getMonth()+1, day=now.getDate();
+    if((month===11&&day>=15)||month===12||month===1||(month===2&&day<=15)) season='winter';
+    else if((month===2&&day>=16)||month===3||month===4||(month===5&&day<=15)) season='spring';
+    else if((month===5&&day>=16)||month===6||month===7||month===8) season='summer';
+    else season='autumn';
+  }
+  document.body.dataset.season=season;
+})();
+</script>
+</body>
+</html>
